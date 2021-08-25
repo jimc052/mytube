@@ -7,7 +7,10 @@ import 'package:mytube/video.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 
-void main() {
+void main() async {
+  // if (Platform.isAndroid) {
+  //   await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
+  // }
   runApp(MyApp());
 }
 
@@ -167,7 +170,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // print("myTube.onPageFinished.url: ${await this.webViewController?.currentUrl()}");
       },
       debuggingEnabled: true,
-      gestureNavigationEnabled: true,
+      // gestureNavigationEnabled: true,
     );
   }
   skipAD() async{ //略過廣告

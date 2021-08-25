@@ -12,6 +12,7 @@ class Player extends StatefulWidget {
 
 class _PlayerState extends State<Player> {
   int processing = 0;
+  Download download = new Download();
   @override
   void initState() {
     super.initState();
@@ -20,12 +21,8 @@ class _PlayerState extends State<Player> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-    await Download.execute(this.widget.url, onLoad: (dynamic voide){
-      this.setState(() {
-        
-      });
-      print("MyTube.Video.onLoad: $voide");
-    }, onProcessing: (int process){
+    await download.getVideo(this.widget.url);
+    await download.execute(onProcessing: (int process){
       processing = process;
       setState(() { });
     });
@@ -34,6 +31,7 @@ class _PlayerState extends State<Player> {
   @override
   dispose() {
     super.dispose();
+    download.stop = true;
   }
   @override
   void reassemble() async {
@@ -45,10 +43,11 @@ class _PlayerState extends State<Player> {
   Widget build(BuildContext context) {
     return Container(
       decoration: new BoxDecoration(color: Colors.white),
+      width: double.infinity,
       child: Column(children: [
-        Text(Download.title),
-        Text(Download.author),
-        Text(Download.duration.inSeconds.toString()),
+        Text(download.title),
+        Text(download.author),
+        Text(download.duration.inSeconds.toString()),
         Text(processing.toString())
       ],)
     );
