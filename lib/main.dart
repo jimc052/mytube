@@ -8,9 +8,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 
 void main() async {
-  // if (Platform.isAndroid) {
-  //   await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
-  // }
   runApp(MyApp());
 }
 
@@ -88,9 +85,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
 
-    // new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
-    //   openVideo("/watch?v=-ZQtc0n76Sw");
-    // });
+    new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
+      openVideo("/watch?v=-ZQtc0n76Sw");
+    });
   }
 
   @override
@@ -269,5 +266,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-

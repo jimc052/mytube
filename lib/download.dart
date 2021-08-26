@@ -25,9 +25,9 @@ class Download {
       duration = video.duration ?? Duration(seconds: 0); // Instance of Duration - 0:19:48.00000
 
       print("${video.duration}");
-      
     } catch(e){
       print(e);
+      throw e;
     }
   }
 
@@ -79,6 +79,7 @@ class Download {
       yt.close();
     } catch(e) {
       print(e);
+      throw e;
     }
   }
 }
