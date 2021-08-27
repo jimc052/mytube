@@ -196,20 +196,47 @@ class PlayerControler extends StatefulWidget {
   _PlayerControlerState createState() => _PlayerControlerState();
 }
 
-class _PlayerControlerState extends State<PlayerControler> {
+
+
+class _PlayerControlerState extends State<PlayerControler> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
     _controller = VideoPlayerController
-      .file(File("file://" + widget.fileName))
-      ..initialize().then((_) {
-        // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
-        setState(() {
-          _controller!.play();
-        });
+    .file(File("file://" + widget.fileName))
+    ..initialize().then((_) {
+      // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
+      setState(() {
+        _controller!.play();
       });
+    });
+    WidgetsBinding.instance!.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state)  {
+    // /Users/jimc/.pub-cache/hosted/pub.dartlang.org/video_player-2.1.14/lib/video_player.dart
+    // 要 mark 不然 pause
+    print("MyTube.didChangeAppLifecycleState: $state");
+    // switch (state) {
+    //   case AppLifecycleState.paused:
+    //     // _controller!.pause();
+    //     _controller!.play();
+    //     break;
+    //   case AppLifecycleState.resumed:
+    //     // _controller!.play();
+    //     break;
+    //   default:
+    // }
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance!.removeObserver(this);
+    super.dispose();
+    _controller!.dispose();
   }
 
   @override
@@ -244,9 +271,4 @@ class _PlayerControlerState extends State<PlayerControler> {
     ]);
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-    _controller!.dispose();
-  }
 }
