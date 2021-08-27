@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mytube/download.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:video_player/video_player.dart';
 
 class Player extends StatefulWidget {
   final String url;
@@ -67,12 +68,12 @@ class _PlayerState extends State<Player> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
     try{
-      // await download.getVideo(this.widget.url);
-      // await download.execute(onProcessing: (int process){
-      //   processing = process;
-      //   setState(() { });
-      // });
-      // print("MyTube.player: 下載完了...............\n ${download.fileName}");
+      await download.getVideo(this.widget.url);
+      await download.execute(onProcessing: (int process){
+        processing = process;
+        setState(() { });
+      });
+      print("MyTube.player.download: ${download.fileName}");
     } catch(e) {
       alert(e);
     }
@@ -93,40 +94,40 @@ class _PlayerState extends State<Player> {
     return Material(
       child: Container(
         decoration: new BoxDecoration(color: Colors.white),
-        padding: EdgeInsets.all(20.0), //容器内补白
+        padding: EdgeInsets.all(0.0), //容器内补白
         width: double.infinity,
-        child: webview()
-        // child: download == null || download.title.length == 0 ? loading() : step2()
+        // child: webview()
+        child: download == null || download.title.length == 0 ? loading() : step2()
       )
     );
   }
 
   Widget loading() {
     return new Center( //保证控件居中效果
-        child: new SizedBox(
-          width: 250.0,
-          height: 120.0,
-          child: new Container(
-            decoration: ShapeDecoration(
-              color: Color(0xffffffff),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8.0)),
-              ),
-            ),
-            child: new Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                new CircularProgressIndicator(),
-                // new Padding(
-                //   padding: const EdgeInsets.only(top: 20.0),
-                //   child: "loading",
-                // ),
-              ],
+      child: new SizedBox(
+        width: 250.0,
+        height: 120.0,
+        child: new Container(
+          decoration: ShapeDecoration(
+            color: Color(0xffffffff),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8.0)),
             ),
           ),
+          child: new Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              new CircularProgressIndicator(),
+              // new Padding(
+              //   padding: const EdgeInsets.only(top: 20.0),
+              //   child: "loading",
+              // ),
+            ],
+          ),
         ),
-      );
+      ),
+    );
   }
 
   Widget step2(){
@@ -135,12 +136,13 @@ class _PlayerState extends State<Player> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if(processing == 100)
-          Expanded(flex: 1,  child: webview()),
+          PlayerControler(fileName: download.fileName),
+          // Expanded(flex: 1,  child: PlayerControler(fileName: download.fileName)),
         Text(download.title,
           textAlign: TextAlign.left,
           style: new TextStyle(
             color: Colors.blue,
-            fontSize: 25,
+            fontSize: 20,
           )
         ),
         Text("作者：" + download.author,
@@ -183,38 +185,68 @@ class _PlayerState extends State<Player> {
       ]
     );
   }
-  Widget webview(){
-    return WebView(
-      initialUrl: new Uri.dataFromString(html(), mimeType: 'text/html').toString(),
-      initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow,
-      allowsInlineMediaPlayback: true,
-      javascriptMode: JavascriptMode.unrestricted,
-      onWebViewCreated: (WebViewController webViewController) async {
-        // this.webViewController = webViewController;
-      },
-      onProgress: (int progress) async {
-        if(progress == 100) {
-          // String url = (await this.webViewController?.currentUrl()).toString();
-          // if(url.indexOf("/watch?") > -1) {
-          //   unmuted();
-          // } 
-        }
-      },
-      onPageStarted: (String url) {},
-      onPageFinished: (String url) async {
+}
 
-      },
-      gestureNavigationEnabled: true,
-      debuggingEnabled: true,
-    );
+class PlayerControler extends StatefulWidget {
+  final String fileName;
+
+  PlayerControler({Key? key, required this.fileName}) : super(key: key);
+
+  @override
+  _PlayerControlerState createState() => _PlayerControlerState();
+}
+
+class _PlayerControlerState extends State<PlayerControler> {
+  VideoPlayerController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController
+      .file(File("file://" + widget.fileName))
+      ..initialize().then((_) {
+        // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
+        setState(() {
+          _controller!.play();
+        });
+      });
   }
 
-  String html(){
-    // /storage/emulated/0/Download/MyTube/
-    // // <video src="file:///${download.fileName}" controls></video>
-    return '''
-      <video src="file:///storage/emulated/0/Download/MyTube/jim.3gpp" controls></video>
-      Hollo Jim
-    ''';
+  @override
+  Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    // print("MyTube.screen => height: $height, width: $width");
+    return Column(children: [
+      Container(
+        width: width > 600 ? 600 : width,
+        child: _controller!.value.isInitialized
+          ? AspectRatio(aspectRatio: _controller!.value.aspectRatio, child: VideoPlayer(_controller!))
+          : Container(),
+      ),
+      Ink(
+        decoration: ShapeDecoration(
+          color: Colors.black,
+          shape: CircleBorder(),
+        ),
+        child: IconButton(
+          icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow),
+          // color: Colors.white,
+          onPressed: () {
+            setState(() {
+              _controller!.value.isPlaying
+                  ? _controller!.pause()
+                  : _controller!.play();
+            });
+          },
+        ),
+      ),
+    ]);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller!.dispose();
   }
 }

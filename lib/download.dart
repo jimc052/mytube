@@ -43,7 +43,7 @@ class Download {
       var audio = streams.withHighestBitrate();
       var audioStream = yt.videos.streamsClient.get(audio); // 有聲音，但有 2倍長度
 
-      var fileName = '${title}.${audio.container.name.toString()}'
+      var fileName = 'youtube.${audio.container.name.toString()}' // ${title}
           .replaceAll(r'\', '')
           .replaceAll('/', '')
           .replaceAll('*', '')
@@ -53,7 +53,6 @@ class Download {
           .replaceAll('>', '')
           .replaceAll('|', '');
       this.fileName = path + '/$fileName';
-      // print("MyTube: ${Download.fileName}");
       var file = File(this.fileName);
 
       if (file.existsSync()) {
@@ -68,11 +67,7 @@ class Download {
       await for (final data in audioStream) {
         count += data.length;
         var progress = ((count / len) * 100).ceil();
-        // if(progress % 5 == 0) {
-          // print('MyTube.Downloading.progress: ${progress}');
-          if(stop == false)
-            onProcessing(progress);
-        // }
+        if(stop == false) onProcessing(progress);
         output.add(data);
       }
       await output.close();

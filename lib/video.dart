@@ -26,8 +26,6 @@ class _VideoState extends State<Video> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
     local = await Storage.getInt("isLocal");
-    // local = true;
-    print("MyTube.local: $local .......................");
     this.setState(() {});
   }
   @override
