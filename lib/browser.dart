@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mytube/download.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:video_player/video_player.dart';
+import 'mywebview.dart';
 
 class Browser extends StatefulWidget {
   final String url;
@@ -47,7 +48,7 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-  return WebView(
+    return WebView(
       initialUrl: this.widget.url,
       initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow,
       javascriptMode: JavascriptMode.unrestricted,
@@ -67,7 +68,6 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
       },
       onPageStarted: (String url) {},
       onPageFinished: (String url) async {
-
       },
       gestureNavigationEnabled: true,
       debuggingEnabled: true,

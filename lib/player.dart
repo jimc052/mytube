@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mytube/download.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:video_player/video_player.dart';
+import 'package:mytube/storage.dart';
+import 'dart:async';
 
 class Player extends StatefulWidget {
   final String url;
@@ -67,15 +68,35 @@ class _PlayerState extends State<Player> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
+    String url = await Storage.getString("url");
+    print("MyTube.url: $url");
     try{
-      await download.getVideo(this.widget.url);
-      await download.execute(onProcessing: (int process){
-        processing = process;
+      if(url == this.widget.url) {
+        download.fileName = await Storage.getString("fileName");
+        download.title = await Storage.getString("title");
+        download.author = await Storage.getString("author");
+        download.duration = Duration(milliseconds: await Storage.getInt("duration"));
+        processing = 100;
         setState(() { });
-      });
+      } else {
+        await download.getVideo(this.widget.url);
+        Storage.setInt("position", 0);
+        await download.execute(onProcessing: (int process){
+          processing = process;
+          if(process == 100) {
+            Storage.setString("url", this.widget.url);
+            Storage.setString("fileName", download.fileName);
+            Storage.setString("title", download.title);
+            Storage.setString("author", download.author);
+            Storage.setInt("duration", download.duration.inMilliseconds);
+          }
+          setState(() { });
+        });
+      }
       print("MyTube.player.download: ${download.fileName}");
     } catch(e) {
-      alert(e);
+      alert(e.toString());
+      print("MyTube.player: ${e.toString()}");
     }
   }
   @override
@@ -145,13 +166,14 @@ class _PlayerState extends State<Player> {
             fontSize: 20,
           )
         ),
-        Text("作者：" + download.author,
-          textAlign: TextAlign.left,
-          style: new TextStyle(
-            // color: Colors.blue,
-            fontSize: 20,
-          )
-        ),
+        if(download.author.length > 0)
+          Text("作者：" + download.author,
+            textAlign: TextAlign.left,
+            style: new TextStyle(
+              // color: Colors.blue,
+              fontSize: 20,
+            )
+          ),
         if(processing < 100)
           Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
             textAlign: TextAlign.left,
@@ -197,18 +219,50 @@ class PlayerControler extends StatefulWidget {
 }
 
 
-
 class _PlayerControlerState extends State<PlayerControler> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
+  Duration _duration = Duration(seconds: 0);
+  Duration _position = Duration(seconds: 0);
 
   @override
   void initState() {
     super.initState();
     _controller = VideoPlayerController
     .file(File("file://" + widget.fileName))
+    ..addListener(() {
+      // final bool isPlaying = _controller.value.isPlaying;
+      // if (isPlaying != _isPlaying) {
+      //   setState(() {
+      //     _isPlaying = isPlaying;
+      //   });
+      // } 
+      Timer.periodic(Duration(seconds: 1), (timer) {
+        this.setState((){
+          _position = _controller!.value.position;
+          if(_position.inSeconds == _duration.inSeconds) {
+            Storage.setInt("position", 0);
+          } else if(_position.inSeconds > 0 && _position.inSeconds % 10 == 0) {
+            Storage.setInt("position", _position.inSeconds);
+          }
+        });
+      });
+      setState(() {
+        _duration = _controller!.value.duration;
+      });
+        // _duration?.compareTo(_position) == 0 || _duration?.compareTo(_position) == -1 ? this.setState((){
+        //   _isEnd = true;
+        // }) : this.setState((){
+        //   _isEnd = false;
+        // });
+    })
     ..initialize().then((_) {
       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
-      setState(() {
+      setState(() async  {
+        int position = await Storage.getInt("position");
+        if(position > 0)
+          _controller!.seekTo(Duration(seconds: position));
+        print("MyTube.position 1: $position");
+        
         _controller!.play();
       });
     });
@@ -251,6 +305,12 @@ class _PlayerControlerState extends State<PlayerControler> with WidgetsBindingOb
           ? AspectRatio(aspectRatio: _controller!.value.aspectRatio, child: VideoPlayer(_controller!))
           : Container(),
       ),
+      
+      Row(
+        children: [
+
+        ]
+      ),
       Ink(
         decoration: ShapeDecoration(
           color: Colors.black,
@@ -268,6 +328,29 @@ class _PlayerControlerState extends State<PlayerControler> with WidgetsBindingOb
           },
         ),
       ),
+      Text('Duration ${_duration.toString()}'),
+      Text('Position ${_position.toString()}'),
+      // if(_duration.inSeconds > 0)
+        Slider(
+          value: _position.inSeconds.toDouble(),
+          min: 0,
+          max: _duration.inSeconds.toDouble(),
+          // label: _position.inSeconds.toDouble().round().toString(),
+          label: _position.toString(),
+          onChanged: (double value) {
+            setState(() {
+              _controller!.seekTo(Duration(seconds: value.toInt()));
+            });
+            
+            print("MyTube.onChanged: $value");
+          },
+          // onChangeStart: (value) {
+          //   print("MyTube.onChangeStart: $value");
+          // },
+          // onChangeEnd: (value) {
+          //   print("MyTube.onChangeEnd: $value");
+          // },
+        )
     ]);
   }
 

@@ -86,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.didChangeDependencies();
 
     new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
-      // openVideo("/watch?v=-ZQtc0n76Sw");
+      openVideo("/watch?v=sTjJ1LlviKM");
     });
   }
 
