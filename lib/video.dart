@@ -4,6 +4,7 @@ import 'package:mytube/player.dart';
 import 'package:mytube/storage.dart';
 import 'package:mytube/browser.dart';
 import 'dart:ui'; 
+import 'dart:async';
 
 class Video extends StatefulWidget {
   final String url;
@@ -15,11 +16,13 @@ class Video extends StatefulWidget {
   _VideoState createState() => _VideoState();
 }
 
-class _VideoState extends State<Video> {
+class _VideoState extends State<Video> with WidgetsBindingObserver {
   int local = -1;
+  var timer;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance!.addObserver(this);
   }
 
   @override
@@ -29,7 +32,24 @@ class _VideoState extends State<Video> {
     this.setState(() {});
   }
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state)  {
+    switch (state) {
+      case AppLifecycleState.paused:
+        if(local != 1) {
+          timer = Timer(Duration(minutes: 20), () { // broswer.dart 要 pause
+            Navigator.pop(context);
+          });          
+        }
+        break;
+      case AppLifecycleState.resumed:
+        if(timer != null) timer.cancel();
+        break;
+      default:
+    }
+  }
+  @override
   dispose() {
+    WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }
   @override

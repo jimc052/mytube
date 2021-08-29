@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:mytube/download.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:video_player/video_player.dart';
-import 'mywebview.dart';
+import 'dart:async';
 
 class Browser extends StatefulWidget {
   final String url;
@@ -17,32 +14,34 @@ class Browser extends StatefulWidget {
 
 class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   WebViewController? webViewController;
+  var timer;
   @override
   void initState() {
     super.initState();
-    
+    WidgetsBinding.instance!.addObserver(this);
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state)  {
-    // /Users/jimc/.pub-cache/hosted/pub.dartlang.org/video_player-2.1.14/lib/video_player.dart
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     // 要 mark 不然 pause
-    print("MyTube.didChangeAppLifecycleState: $state");
-    // switch (state) {
-    //   case AppLifecycleState.paused:
-    //     // _controller!.pause();
-    //     _controller!.play();
-    //     break;
-    //   case AppLifecycleState.resumed:
-    //     // _controller!.play();
-    //     break;
-    //   default:
-    // }
+    switch (state) {
+      case AppLifecycleState.paused:
+        timer = Timer(Duration(minutes: 20), () { // video.dart 要 pop
+          pause();
+        }); 
+        break;
+      case AppLifecycleState.resumed:
+        if(timer != null) timer.cancel();
+        break;
+      default:
+    }
   }
   
   @override
   void dispose() {
+    print("MyTube.broswer: dispose.....................");
     WidgetsBinding.instance!.removeObserver(this);
+    this.webViewController = null;
     super.dispose();
   }
 
@@ -74,6 +73,16 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
     );
   }
 
+  pause() async {
+    await webViewController?.evaluateJavascript(
+      '''
+      {
+        let video = document.querySelector("video"); 
+        if(video != null && video.paused == false)
+          video.pause();
+      }
+      ''');
+  }
   unmuted() async{ //
     await webViewController?.evaluateJavascript(
     '''

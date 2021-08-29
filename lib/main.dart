@@ -45,11 +45,11 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     eventChannel.receiveBroadcastStream().listen((data) async {
       if(data == "onStop" && webViewController != null) {
-        timer = Timer(Duration(minutes: 20), () {
-          methodChannel.invokeMethod('finish');
-        });
+        // timer = Timer(Duration(minutes: 20), () {
+        //   methodChannel.invokeMethod('finish');
+        // });
       } else if(data == "onResume"){
-        if(timer != null) timer.cancel();
+        // if(timer != null) timer.cancel();
       } else if(data == "unplugged") {
         String url = (await this.webViewController?.currentUrl()).toString();
         if(url.indexOf("/watch?") > -1) {
@@ -86,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.didChangeDependencies();
 
     new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
-      openVideo("/watch?v=sTjJ1LlviKM");
+      // openVideo("/watch?v=sTjJ1LlviKM");
     });
   }
 
