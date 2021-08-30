@@ -85,9 +85,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
 
-    new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
-      openVideo("/watch?v=sTjJ1LlviKM");
-    });
+    // new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
+    //   openVideo("/watch?v=sTjJ1LlviKM");
+    // });
   }
 
   @override
@@ -171,7 +171,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // gestureNavigationEnabled: true,
     );
   }
-  skipAD() async{ //略過廣告
+  skipAD() async{ // 略過廣告
     await webViewController?.evaluateJavascript(
     '''
       console.log("MyTube: skipAD............")
@@ -189,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     ''');
   }
-  clearIntervalAD() async {
+  clearIntervalAD() async { // 取消略過廣告
     await webViewController?.evaluateJavascript(
       '''
       if(typeof window.timerAD != "undefined") {
@@ -199,8 +199,7 @@ class _MyHomePageState extends State<MyHomePage> {
       };
       ''');
   }
-  interruptClick(String url) async {
-    // https://m.youtube.com/
+  interruptClick(String url) async { // 攔截 anchor click
     await webViewController?.evaluateJavascript(
     '''
     {
@@ -238,12 +237,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   
 
-  tap(int x, int y) async { // ok了，但座標還沒寫, 不用了
-    var result = await methodChannel.invokeMethod('execCmd', {
-      "cmd": "input tap $x $y" // adb shell 
-    });
-    // print("MyTube: " + result);
-  }
+  // tap(int x, int y) async { // ok了，但座標還沒寫, 不用了
+  //   var result = await methodChannel.invokeMethod('execCmd', {
+  //     "cmd": "input tap $x $y" // adb shell 
+  //   });
+  //   // print("MyTube: " + result);
+  // }
   JavascriptChannel _javascriptChannel(BuildContext context) { // 不用了
     return JavascriptChannel( // 接收來自 javascript
       name: 'Flutter',

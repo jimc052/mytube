@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:mytube/player.dart';
 import 'package:mytube/storage.dart';
 import 'package:mytube/browser.dart';
+import 'package:mytube/mywebview.dart';
 import 'dart:ui'; 
 import 'dart:async';
 
@@ -10,6 +10,7 @@ class Video extends StatefulWidget {
   final String url;
   Video({Key? key, required this.url}) : super(key: key){
     // print("MyTube.Video.url: " + this.url);
+    print("${MyWebView.host}");
   }
 
   @override
