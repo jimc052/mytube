@@ -55,43 +55,87 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   @override
   void reassemble() async {
     super.reassemble();
-    local = -1; this.setState(() {});
+    // local = 1; this.setState(() {});
   }
-
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints.expand(),
-      child: Stack(
-        alignment:Alignment.center , //指定未定位或部分定位widget的对齐方式
-        children: <Widget>[
-          Container(
-            decoration: new BoxDecoration(color: Colors.transparent),
-            width: double.infinity,
-            child: local == -1 ? null : (local == 1  
-              ? Player(url: this.widget.url) 
-              : Browser(url: this.widget.url))
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_sharp,
+            color: Colors.white,
           ),
-          if(local > -1)
-            Positioned(
-              bottom: 10.0,
-              right: 10.0,
-              child: MaterialButton(
-                shape: CircleBorder(),
-                color: Colors.blue,
-                padding: EdgeInsets.all(15),
-                onPressed: () async {
-                  local = local == 1 ? 0 : 1;
-                  await Storage.setInt("isLocal", local);
-                  setState(()  { });
-                },
-                child: Icon( local == 0 ? Icons.vertical_align_bottom_sharp : Icons.wb_cloudy_sharp, size: 30, color: Colors.white,
-                ),
-              )
-            ) 
-          ,
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text('MyTube'),
+        actions: [
+          IconButton( // 另存新檔
+            icon: Icon(
+              Icons.file_copy, // more_horiz
+              color: Colors.white,
+            ),
+            onPressed: () {
+              print('MyTube.file_copy');
+              alert("還沒有寫，另存新檔");
+            }
+          ),
         ],
       ),
+      body: local == -1 ? null : (local == 1  
+        ? Player(url: this.widget.url) 
+        : Browser(url: this.widget.url)
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          local = local == 1 ? 0 : 1;
+          await Storage.setInt("isLocal", local);
+          setState(()  { });
+        },
+        child: local == -1 ? Container() : Icon(local == 0 ? Icons.vertical_align_bottom_sharp : Icons.wb_cloudy_sharp, size: 30, color: Colors.white,),
+      )
+    );
+  }
+
+  void alert(msg) {
+    AlertDialog dialog = AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(0)),
+      ),
+      content: Row(
+        children: <Widget>[
+          Icon(
+            Icons.warning,
+            color: Colors.red,
+            size: 20,
+          ),
+          Padding(padding: EdgeInsets.only(right: 10)),
+          Text(msg,
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 20,
+            ),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        FlatButton(
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+          child: Text(
+            "CLOSE",
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
+      ],
+    );
+
+    showDialog(
+      barrierDismissible: false,
+      context: context, 
+      builder: (BuildContext context) => dialog,
     );
   }
 }

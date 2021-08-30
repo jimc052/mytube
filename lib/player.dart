@@ -228,6 +228,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   VideoPlayerController? _controller;
   Duration _duration = Duration(seconds: 0);
   Duration _position = Duration(seconds: 0);
+  var timer;
 
   @override
   void initState() {
@@ -235,7 +236,7 @@ class _PlayerControlerState extends State<PlayerControler> {
     _controller = VideoPlayerController
     .file(File("file://" + widget.fileName))
     ..addListener(() {
-      Timer.periodic(Duration(seconds: 1), (timer) {
+      Timer.run( () {
         this.setState((){
           _position = _controller!.value.position;
           if(_position.inSeconds == _duration.inSeconds) {
@@ -265,6 +266,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   @override
   void dispose() {
     _controller!.dispose();
+    // if(timer != null) timer.cancel();
     super.dispose();
   }
 
@@ -295,29 +297,39 @@ class _PlayerControlerState extends State<PlayerControler> {
         ),
         Row(
           children: [      
-            Ink(
-              decoration: ShapeDecoration(
-                color: Colors.black,
-                shape: CircleBorder(),
-              ),
-              child: IconButton(
-                icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow),
-                // color: Colors.white,
-                onPressed: () {
-                  setState(() {
-                    _controller!.value.isPlaying
-                        ? _controller!.pause()
-                        : _controller!.play();
-                  });
-                },
-              ),
+            Material(
+              // color: Colors.red,
+              child: Ink(
+                decoration: ShapeDecoration(
+                  // color: Colors.black,
+                  shape: CircleBorder(),
+                  // shape: Border.all(
+                  //   color: Colors.black,
+                  //   width: 0,
+                  // ) ,
+                ),
+                child: IconButton(
+                  icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow),
+                  // color: Colors.white,
+                  onPressed: () {
+                    setState(() {
+                      _controller!.value.isPlaying
+                          ? _controller!.pause()
+                          : _controller!.play();
+                    });
+                  },
+                ),
+              )
             ),
-            Text('${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'),
+            Text('${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
+              ,style: TextStyle(
+              // color: Colors.red,
+              fontSize: 18,
+            ),),
             // if(_duration.inSeconds > 0)
           ]
         ),
     ]),
     );
   }
-
 }

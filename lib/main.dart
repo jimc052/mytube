@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'My Tube',
-      // debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -86,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.didChangeDependencies();
 
     new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
-      // openVideo("/watch?v=sTjJ1LlviKM");
+      openVideo("/watch?v=sTjJ1LlviKM");
     });
   }
 
