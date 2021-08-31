@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mytube/player.dart';
+import 'package:mytube/video/player.dart';
+import 'package:mytube/video/browser.dart';
 import 'package:mytube/storage.dart';
-import 'package:mytube/browser.dart';
-import 'package:mytube/mywebview.dart';
+import 'package:mytube/youtube.dart';
 import 'dart:ui'; 
 import 'dart:async';
 

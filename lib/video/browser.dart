@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:async';
+import 'package:mytube/youtube.dart';
 
 class Browser extends StatefulWidget {
   final String url;
@@ -10,7 +10,6 @@ class Browser extends StatefulWidget {
   @override
   _BrowserState createState() => _BrowserState();
 }
-
 
 class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   WebViewController? webViewController;
@@ -23,11 +22,10 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    // 要 mark 不然 pause
     switch (state) {
       case AppLifecycleState.paused:
         timer = Timer(Duration(minutes: 20), () { // video.dart 要 pop
-          pause();
+          this.webViewController!.pause();
         }); 
         break;
       case AppLifecycleState.resumed:
@@ -39,7 +37,6 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   
   @override
   void dispose() {
-    print("MyTube.broswer: dispose.....................");
     WidgetsBinding.instance!.removeObserver(this);
     this.webViewController = null;
     super.dispose();
@@ -59,9 +56,9 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
       // ].toSet(),
       onProgress: (int progress) async {
         if(progress == 100) {
-          String url = (await this.webViewController?.currentUrl()).toString();
+          String url = (await this.webViewController!.currentUrl()).toString();
           if(url.indexOf("/watch?") > -1) {
-            unmuted();
+            this.webViewController!.unmuted();
           } 
         }
       },
@@ -71,40 +68,5 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
       gestureNavigationEnabled: true,
       debuggingEnabled: true,
     );
-  }
-
-  pause() async {
-    await webViewController?.evaluateJavascript(
-      '''
-      {
-        let video = document.querySelector("video"); 
-        if(video != null && video.paused == false)
-          video.pause();
-      }
-      ''');
-  }
-  unmuted() async{ //
-    await webViewController?.evaluateJavascript(
-    '''
-      if(typeof window.muted == "undefined") {
-        window.muted = false;
-        console.log("MyTube: mute............")
-        setTimeout(()=>{
-          click("ytp-unmute");
-          let video = document.querySelector("video"); 
-          video.play();
-        }, 100 * 6)
-      }
-
-      function click(cls){
-        let el = document.querySelector("." + cls) ;
-        if(el != null) {
-          el.click();
-          return true;
-        } else {
-          return false;
-        }
-      }
-    ''');
   }
 }

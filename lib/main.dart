@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+// import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:mytube/video.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
+import 'package:mytube/youtube.dart';
 
 void main() async {
   runApp(MyApp());
@@ -43,6 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    
     eventChannel.receiveBroadcastStream().listen((data) async {
       if(data == "onStop" && webViewController != null) {
         // timer = Timer(Duration(minutes: 20), () {
@@ -51,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
       } else if(data == "onResume"){
         // if(timer != null) timer.cancel();
       } else if(data == "unplugged") {
-        String url = (await this.webViewController?.currentUrl()).toString();
+        String url = (await this.webViewController!.currentUrl()).toString();
         if(url.indexOf("/watch?") > -1) {
           await webViewController?.evaluateJavascript(
             '''
@@ -84,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-
+    
     // new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
     //   openVideo("/watch?v=sTjJ1LlviKM");
     // });
@@ -133,9 +135,9 @@ class _MyHomePageState extends State<MyHomePage> {
           String url = (await this.webViewController?.currentUrl()).toString();
           if(url.indexOf("#") > -1) {
           } else if(url.indexOf("/watch?") > -1) {
-            skipAD();
+            this.webViewController!.skipAD();
           } else {
-            clearIntervalAD();
+            this.webViewController!.clearIntervalAD();
           }
         }
       },
@@ -164,78 +166,14 @@ class _MyHomePageState extends State<MyHomePage> {
         // print("myTube.onPageStarted.url: ${await this.webViewController?.currentUrl()}");
       },
       onPageFinished: (String url) async {
-        interruptClick(url);
+        this.webViewController!.interruptClick(url);
         // print("myTube.onPageFinished.url: ${await this.webViewController?.currentUrl()}");
       },
       debuggingEnabled: true,
       // gestureNavigationEnabled: true,
     );
   }
-  skipAD() async{ // 略過廣告
-    await webViewController?.evaluateJavascript(
-    '''
-      console.log("MyTube: skipAD............")
-      if(typeof window.timerAD == "undefined") {
-        window.timerAD = setInterval(()=>{
-          // Flutter.postMessage(JSON.stringify({x: 0, y: 0})); // 不用了
-          let el = document.querySelector(".ytp-ad-skip-button");
-          console.log("MyTube: " + (new Date()))
-          if(el != null) {
-            console.log(el)
-            console.lg("MyTube: 略過廣告............");
-            el.click();
-          }
-        }, 1000 * 5)
-      }
-    ''');
-  }
-  clearIntervalAD() async { // 取消略過廣告
-    await webViewController?.evaluateJavascript(
-      '''
-      if(typeof window.timerAD != "undefined") {
-        console.log("MyTube: clearInterval............")
-        clearInterval(window.timerAD)
-        delete window.timerAD;
-      };
-      ''');
-  }
-  interruptClick(String url) async { // 攔截 anchor click
-    await webViewController?.evaluateJavascript(
-    '''
-    {
-      let intervalAnchor = setInterval(()=>{
-        let xx = document.querySelectorAll("a.large-media-item-thumbnail-container");
-        xx.forEach((item, index) =>{
-          // console.log(item)
-          let href = item.getAttribute("href");
-          if(href.indexOf("javascr") == -1) {
-            item.setAttribute("href", "javascript:void(0);");
-            // console.log(href);
-            item.addEventListener("click", (e)=> {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              e.stopPropagation();
-              Flutter.postMessage(JSON.stringify({href}));
-            }, false)
-          }
-        })
-      }, 1 * 1000);
-    }
-
-    function MyTubeClick(e) {
-      console.log(e)
-      console.log("MyTube.Click: " + e.srcElement.getAttribute("href"))
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-
-      // Flutter.postMessage(JSON.stringify({}));
-      // https://m.youtube.com/watch?v=4KfQ_dtZzhU
-
-    }
-    ''');
-  }
-  
+    
 
   // tap(int x, int y) async { // ok了，但座標還沒寫, 不用了
   //   var result = await methodChannel.invokeMethod('execCmd', {
@@ -262,6 +200,8 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (_) {
         return Video(url: url + href); 
       }
-    );
+    ).then((valueFromDialog){
+      print("MyTube.openVideo: return");
+    });
   }
 }

@@ -1,59 +1,16 @@
 import 'package:webview_flutter/webview_flutter.dart';
+export 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/material.dart';
 
-class MyWebView extends StatelessWidget {
+extension on WebView {
+  String get host => "https://www.youtube.com/";
+  // this.WebViewController
+}
+
+extension MyWebController on WebViewController {
   static String get host => "https://www.youtube.com/";
-
-  String watchID;
-  Function(String)? onPageStarted;
-  Function(String)? onPageFinished;
-  Function(int)? onProgress;
-  Function(WebViewController, MyWebView)? onWebViewCreated;
-  List<JavascriptChannel>? javascriptChannels;
-
-  MyWebView({this.watchID = "", 
-    this.onPageStarted, this.onPageFinished,
-    this.onProgress, this.javascriptChannels,
-    Key? key}) : super(key: key);
-  var webViewController;
-
-  @override
-  Widget build(BuildContext context) {
-    return WebView(
-      initialUrl: host + this.watchID,
-      javascriptMode: JavascriptMode.unrestricted,
-      onWebViewCreated: (WebViewController webViewController) async {
-        this.webViewController = webViewController;
-        if(this.onWebViewCreated is Function)
-          this.onWebViewCreated!(webViewController, this);
-      },
-      initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow,
-      onProgress: (int progress) async {
-        if(this.onProgress is Function) {
-          this.onProgress!(progress);
-        }
-      },
-      javascriptChannels: this.javascriptChannels!.toSet(),
-      // navigationDelegate: (NavigationRequest request) async {
-      //   print("MyTube.navigationDelegate: ${request.url}");
-      //     return NavigationDecision.prevent;
-      //     return NavigationDecision.navigate;
-      // },
-      onPageStarted: (String url) async {
-        if(this.onPageStarted is Function) this.onPageStarted!(url);
-        // print("myTube.onPageStarted.url: ${await this.webViewController?.currentUrl()}");
-      },
-      onPageFinished: (String url) async {
-        if(this.onPageFinished is Function) this.onPageFinished!(url);
-        // interruptClick(url);
-      },
-      debuggingEnabled: true,
-      // gestureNavigationEnabled: true,
-    );
-  }
-
-  skipAD() async{ // 略過廣告
-    await webViewController?.evaluateJavascript(
+  void skipAD() async { // 略過廣告
+    await this.evaluateJavascript(
     '''
       console.log("MyTube: skipAD............")
       if(typeof window.timerAD == "undefined") {
@@ -71,7 +28,7 @@ class MyWebView extends StatelessWidget {
     ''');
   }
   clearIntervalAD() async { // 取消略過廣告
-    await webViewController?.evaluateJavascript(
+    await this.evaluateJavascript(
       '''
       if(typeof window.timerAD != "undefined") {
         console.log("MyTube: clearInterval............")
@@ -81,7 +38,7 @@ class MyWebView extends StatelessWidget {
       ''');
   }
   interruptClick(String url) async { // 攔截 anchor click
-    await webViewController?.evaluateJavascript(
+    await this.evaluateJavascript(
     '''
     {
       let intervalAnchor = setInterval(()=>{
@@ -117,7 +74,7 @@ class MyWebView extends StatelessWidget {
     ''');
   }
   pause() async { // 暫停
-    await webViewController?.evaluateJavascript(
+    await this.evaluateJavascript(
       '''
       {
         let video = document.querySelector("video"); 
@@ -126,8 +83,8 @@ class MyWebView extends StatelessWidget {
       }
       ''');
   }
-  unmuted() async{ // 靜音
-    await webViewController?.evaluateJavascript(
+  unmuted() async{ // 取消靜音
+    await this.evaluateJavascript(
     '''
       if(typeof window.muted == "undefined") {
         window.muted = false;
@@ -149,5 +106,59 @@ class MyWebView extends StatelessWidget {
         }
       }
     ''');
+  }
+}
+
+
+class Youtube extends StatelessWidget {
+  static String get host => "https://www.youtube.com/";
+
+  String watchID;
+  Function(String)? onPageStarted;
+  Function(String)? onPageFinished;
+  Function(int)? onProgress;
+  Function(WebViewController)? onWebViewCreated;
+  List<JavascriptChannel>? javascriptChannels;
+
+  Youtube({
+     this.watchID = "", 
+    this.onPageStarted, this.onPageFinished,
+    this.onProgress, this.javascriptChannels,
+    Key? key}) : super(key: key);
+  var webViewController;
+
+  @override
+  Widget build(BuildContext context) {
+    return WebView(
+      initialUrl: host + this.watchID,
+      javascriptMode: JavascriptMode.unrestricted,
+      onWebViewCreated: (WebViewController webViewController) async {
+        this.webViewController = webViewController;
+        if(this.onWebViewCreated is Function)
+          this.onWebViewCreated!(webViewController);
+      },
+      initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow,
+      onProgress: (int progress) async {
+        if(this.onProgress is Function) {
+          this.onProgress!(progress);
+        }
+      },
+      javascriptChannels: this.javascriptChannels!.toSet(),
+      // navigationDelegate: (NavigationRequest request) async {
+      //   print("MyTube.navigationDelegate: ${request.url}");
+      //     return NavigationDecision.prevent;
+      //     return NavigationDecision.navigate;
+      // },
+      onPageStarted: (String url) async {
+        if(this.onPageStarted is Function) this.onPageStarted!(url);
+        // print("myTube.onPageStarted.url: ${await this.this.currentUrl()}");
+      },
+      onPageFinished: (String url) async {
+        if(this.onPageFinished is Function) this.onPageFinished!(url);
+        // interruptClick(url);
+      },
+      debuggingEnabled: true,
+      // gestureNavigationEnabled: true,
+    );
   }
 }
