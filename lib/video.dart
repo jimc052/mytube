@@ -10,7 +10,7 @@ class Video extends StatefulWidget {
   final String url;
   Video({Key? key, required this.url}) : super(key: key){
     // print("MyTube.Video.url: " + this.url);
-    print("${MyWebView.host}");
+    print("${Youtube.host}");
   }
 
   @override

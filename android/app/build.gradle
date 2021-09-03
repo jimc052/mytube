@@ -33,7 +33,7 @@ android {
         minSdkVersion 22
         targetSdkVersion 30
         versionCode 1
-        versionName '2021-08-27'
+        versionName '2021-09-03'
         applicationVariants.all { variant ->
             variant.outputs.all {
                  outputFileName = "MyTube-${variant.versionName}.apk"

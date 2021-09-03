@@ -2,7 +2,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 export 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/material.dart';
 
-extension on WebView {
+extension on WebView { // 沒有用到
   String get host => "https://www.youtube.com/";
   // this.WebViewController
 }
@@ -17,10 +17,10 @@ extension MyWebController on WebViewController {
         window.timerAD = setInterval(()=>{
           // Flutter.postMessage(JSON.stringify({x: 0, y: 0})); // 不用了
           let el = document.querySelector(".ytp-ad-skip-button");
-          console.log("MyTube: " + (new Date()))
+          console.log("MyTube.skipAD: " + (new Date()))
           if(el != null) {
             console.log(el)
-            console.lg("MyTube: 略過廣告............");
+            console.lg("MyTube.skipAD: 略過廣告............");
             el.click();
           }
         }, 1000 * 5)
@@ -37,42 +37,64 @@ extension MyWebController on WebViewController {
       };
       ''');
   }
-  interruptClick(String url) async { // 攔截 anchor click
+  anchorClick(String cls) async { // 攔截 anchor click
+    print("Mytube.anchorClick: $cls");
     await this.evaluateJavascript(
     '''
-    {
-      let intervalAnchor = setInterval(()=>{
-        let xx = document.querySelectorAll("a.large-media-item-thumbnail-container");
+    setTimeout(()=>{
+      let options = document.querySelectorAll("div.chip-bar-contents > *");
+      let b = false;
+      for(let i = 0; i < options.length; i++) {
+        let item = options[i];
+        if(item.innerText == "最新上傳") {
+          item.click();
+          setTimeout(readAnchor, 600);
+          b = true;
+        }
+      }
+      if(b == false) readAnchor();
+
+    }, 1000);
+    
+    function readAnchor(){
+      window.intervalAnchor = setInterval(()=>{
+        let xx = document.querySelectorAll("$cls");
         xx.forEach((item, index) =>{
-          // console.log(item)
           let href = item.getAttribute("href");
           if(href.indexOf("javascr") == -1) {
+            if(index == 2) console.log(href)
             item.setAttribute("href", "javascript:void(0);");
-            // console.log(href);
-            item.addEventListener("click", (e)=> {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              e.stopPropagation();
-              Flutter.postMessage(JSON.stringify({href}));
-            }, false)
+            item.setAttribute("_href", href);
+            item.addEventListener("click", onAnchorClick, false)
           }
         })
-      }, 1 * 1000);
+      }, 1 * 1000);        
     }
 
-    function MyTubeClick(e) {
-      console.log(e)
-      console.log("MyTube.Click: " + e.srcElement.getAttribute("href"))
+    function onAnchorClick(e) {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
-
-      // Flutter.postMessage(JSON.stringify({}));
-      // https://m.youtube.com/watch?v=4KfQ_dtZzhU
-
+      let tagName = "", parent = e.srcElement;
+      do {
+        tagName = parent.tagName;
+        if(tagName == "A")
+          break;
+        else
+          parent = parent.parentElement;
+      } while(tagName != "A")
+      let _href = parent.getAttribute("_href");
+      Flutter.postMessage(JSON.stringify({href: _href}));
     }
     ''');
   }
+  readAnchor(bool b) async {
+    if(b == false)
+      await this.evaluateJavascript(''' clearInterval(window.intervalAnchor) ''');
+    else 
+      await this.evaluateJavascript(''' readAnchor() ''');
+  }
+
   pause() async { // 暫停
     await this.evaluateJavascript(
       '''
@@ -110,7 +132,7 @@ extension MyWebController on WebViewController {
 }
 
 
-class Youtube extends StatelessWidget {
+class Youtube extends StatelessWidget { // 沒有用到
   static String get host => "https://www.youtube.com/";
 
   String watchID;
@@ -155,7 +177,7 @@ class Youtube extends StatelessWidget {
       },
       onPageFinished: (String url) async {
         if(this.onPageFinished is Function) this.onPageFinished!(url);
-        // interruptClick(url);
+        // anchorClick(url);
       },
       debuggingEnabled: true,
       // gestureNavigationEnabled: true,

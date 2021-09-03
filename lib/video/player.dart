@@ -4,6 +4,7 @@ import 'package:mytube/download.dart';
 import 'package:video_player/video_player.dart';
 import 'package:mytube/storage.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
 
 class Player extends StatefulWidget {
   final String url;
@@ -157,59 +158,65 @@ class _PlayerState extends State<Player> {
         if(processing == 100)
           PlayerControler(fileName: download.fileName),
           // Expanded(flex: 1,  child: PlayerControler(fileName: download.fileName)),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 8.0), //容器内补白
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(download.title,
-                textAlign: TextAlign.left,
-                style: new TextStyle(
-                  color: Colors.blue,
-                  fontSize: 20,
-                )
-              ),
-              if(download.author.length > 0)
-                Text("作者：" + download.author,
+        Expanded( flex: 1,
+          child: Container(
+            //  margin: const EdgeInsets.all(15.0),
+            padding: EdgeInsets.symmetric(horizontal: 8.0),
+            // decoration: BoxDecoration(
+            //   border: Border.all(color: Colors.blueAccent)
+            // ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(download.title,
                   textAlign: TextAlign.left,
                   style: new TextStyle(
-                    // color: Colors.blue,
+                    color: Colors.blue,
                     fontSize: 20,
                   )
                 ),
-              if(processing < 100)
-                Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
-                  textAlign: TextAlign.left,
-                  style: new TextStyle(
-                    // color: Colors.blue,
-                    fontSize: 20,
-                  )
-                ),
-              if(processing < 100)
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(height: 30,),
-                    LinearProgressIndicator(  
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation(Colors.blue),
-                      value: processing.toDouble() / 100,  
-                    ),
-                    Container(height: 10,),
-                    Text(processing.toString(),
-                      textAlign: TextAlign.center,
-                      style: new TextStyle(
-                        // color: Colors.blue,
-                        fontSize: 20,
-                      )
-                    ),
-                  ]
-                ),
-              ]
-          )
-        ),
+                if(download.author.length > 0)
+                  Text("作者：" + download.author,
+                    textAlign: TextAlign.left,
+                    style: new TextStyle(
+                      // color: Colors.blue,
+                      fontSize: 20,
+                    )
+                  ),
+                if(processing < 100)
+                  Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
+                    textAlign: TextAlign.left,
+                    style: new TextStyle(
+                      // color: Colors.blue,
+                      fontSize: 20,
+                    )
+                  ),
+                if(processing < 100)
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(height: 30,),
+                      LinearProgressIndicator(  
+                        backgroundColor: Colors.grey[200],
+                        valueColor: AlwaysStoppedAnimation(Colors.blue),
+                        value: processing.toDouble() / 100,  
+                      ),
+                      Container(height: 10,),
+                      Text(processing.toString(),
+                        textAlign: TextAlign.center,
+                        style: new TextStyle(
+                          // color: Colors.blue,
+                          fontSize: 20,
+                        )
+                      ),
+                    ]
+                  ),
+                ]
+            )
+          ),
+        )
       ]
     );
   }
@@ -225,6 +232,7 @@ class PlayerControler extends StatefulWidget {
 }
 
 class _PlayerControlerState extends State<PlayerControler> {
+  final eventChannel = const EventChannel('com.flutter/EventChannel');
   VideoPlayerController? _controller;
   Duration _duration = Duration(seconds: 0);
   Duration _position = Duration(seconds: 0);
@@ -249,6 +257,7 @@ class _PlayerControlerState extends State<PlayerControler> {
       setState(() {
         _duration = _controller!.value.duration;
       });
+      // 
     })
     ..initialize().then((_) {
       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
@@ -260,6 +269,12 @@ class _PlayerControlerState extends State<PlayerControler> {
         
         _controller!.play();
       });
+    });
+
+    eventChannel.receiveBroadcastStream().listen((data) async {
+      if(data == "unplugged") {
+        _controller!.pause();
+      }
     });
   }
   

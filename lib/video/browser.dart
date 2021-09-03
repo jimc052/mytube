@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:mytube/youtube.dart';
+import 'package:flutter/services.dart';
 
 class Browser extends StatefulWidget {
   final String url;
@@ -13,11 +14,18 @@ class Browser extends StatefulWidget {
 
 class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   WebViewController? webViewController;
+  final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
+    eventChannel.receiveBroadcastStream().listen((data) async {
+      if(data == "unplugged") {
+        this.webViewController!.pause();
+      }
+    });
   }
 
   @override

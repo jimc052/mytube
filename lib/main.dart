@@ -40,6 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
   final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer, url = "https://m.youtube.com", permission = false;
+  String currentURL = "";
 
   @override
   void initState() {
@@ -55,14 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
       } else if(data == "unplugged") {
         String url = (await this.webViewController!.currentUrl()).toString();
         if(url.indexOf("/watch?") > -1) {
-          await webViewController?.evaluateJavascript(
-            '''
-            {
-              let video = document.querySelector("video"); 
-              if(video != null && video.paused == false)
-                video.pause();
-            }
-            ''');
+          await webViewController!.pause();
         }
       }
     });
@@ -115,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<bool> _onWillPop() async {
     if (this.webViewController != null && await this.webViewController!.canGoBack()) {
-      this.webViewController?.loadUrl(url);
+      this.webViewController!.loadUrl(url);
       return Future.value(false); // 表示不退出
     } else {
       return Future.value(true);
@@ -131,23 +125,32 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow,
       onProgress: (int progress) async {
-        if(progress == 100) {
-          String url = (await this.webViewController?.currentUrl()).toString();
-          if(url.indexOf("#") > -1) {
-          } else if(url.indexOf("/watch?") > -1) {
-            this.webViewController!.skipAD();
-          } else {
-            this.webViewController!.clearIntervalAD();
+        if(progress == 100 ) {
+          String url = (await this.webViewController!.currentUrl()).toString();
+          if(currentURL != url){
+            // print("MyTube.onProgress: $url");
+            currentURL = url;
+            if(url == "https://m.youtube.com/" ) {
+              this.webViewController!.anchorClick("a.large-media-item-thumbnail-container");
+            } else if(url.indexOf("playlist?list") > -1) {
+              this.webViewController!.anchorClick("a.compact-media-item-image");
+            } else if(url.indexOf("#") > -1) {
+
+            } else if(url.indexOf("/watch?") > -1) {
+              this.webViewController!.skipAD();
+            } else {
+              this.webViewController!.clearIntervalAD();
+            }            
           }
         }
       },
       // userAgent: "Flutter",
       javascriptChannels: <JavascriptChannel>[
-        _javascriptChannel(context),
+        javascriptChannel(context),
       ].toSet(),
       // navigationDelegate: (NavigationRequest request) async {
       //   print("MyTube.navigationDelegate: ${request.url}");
-      //   this.webViewController?.currentUrl().then((value){
+      //   this.webViewController!.currentUrl().then((value){
       //     print(value);
       //   });
       //   if (request.url.indexOf(".yahoo.") > -1 ||
@@ -163,25 +166,17 @@ class _MyHomePageState extends State<MyHomePage> {
       //   }
       // },
       onPageStarted: (String url) async {
-        // print("myTube.onPageStarted.url: ${await this.webViewController?.currentUrl()}");
+        print("myTube.onPageStarted.url: ${await this.webViewController!.currentUrl()}");
       },
       onPageFinished: (String url) async {
-        this.webViewController!.interruptClick(url);
-        // print("myTube.onPageFinished.url: ${await this.webViewController?.currentUrl()}");
+
       },
       debuggingEnabled: true,
       // gestureNavigationEnabled: true,
     );
   }
-    
 
-  // tap(int x, int y) async { // ok了，但座標還沒寫, 不用了
-  //   var result = await methodChannel.invokeMethod('execCmd', {
-  //     "cmd": "input tap $x $y" // adb shell 
-  //   });
-  //   // print("MyTube: " + result);
-  // }
-  JavascriptChannel _javascriptChannel(BuildContext context) { // 不用了
+  JavascriptChannel javascriptChannel(BuildContext context) { // 不用了
     return JavascriptChannel( // 接收來自 javascript
       name: 'Flutter',
       onMessageReceived: (JavascriptMessage message) async {
@@ -195,6 +190,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   openVideo(href) {
     print("MyTube.openVideo: $href");
+    this.webViewController!.readAnchor(false);
     showDialog(
       context: context,
       builder: (_) {
@@ -202,6 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     ).then((valueFromDialog){
       print("MyTube.openVideo: return");
+      this.webViewController!.readAnchor(true);
     });
   }
 }
