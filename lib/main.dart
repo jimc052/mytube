@@ -7,6 +7,8 @@ import 'package:mytube/video.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 import 'package:mytube/youtube.dart';
+import 'package:mytube/storage.dart';
+import 'package:mytube/video/fileSave.dart';
 
 void main() async {
   runApp(MyApp());
@@ -80,16 +82,18 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-    
-    // new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
-    //   openVideo("/watch?v=sTjJ1LlviKM");
-    // });
+
+    String watchID = await Storage.getString("watchID");
+    if(watchID.length > 0){
+      new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
+        openVideo(watchID); // "/watch?v=sTjJ1LlviKM");
+      });           
+    }
   }
 
   @override
   void reassemble() async {
     super.reassemble();
-    
   }
   @override
   dispose() {
@@ -108,8 +112,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<bool> _onWillPop() async {
-    if (this.webViewController != null && await this.webViewController!.canGoBack()) {
-      this.webViewController!.loadUrl(url);
+    String currenturl = (await this.webViewController!.currentUrl()).toString();
+    // print("MyTube.onWillPop.currentUrl: $currenturl");
+
+    if (this.webViewController != null && currenturl != url + "/") {
+      if(currenturl.indexOf("list=") > -1)
+        this.webViewController!.goBack();
+      else
+        this.webViewController!.loadUrl(url);
       return Future.value(false); // 表示不退出
     } else {
       return Future.value(true);
@@ -128,7 +138,7 @@ class _MyHomePageState extends State<MyHomePage> {
         if(progress == 100 ) {
           String url = (await this.webViewController!.currentUrl()).toString();
           if(currentURL != url){
-            // print("MyTube.onProgress: $url");
+            print("MyTube.onProgress: $url");
             currentURL = url;
             if(url == "https://m.youtube.com/" ) {
               this.webViewController!.anchorClick("a.large-media-item-thumbnail-container");
@@ -188,7 +198,8 @@ class _MyHomePageState extends State<MyHomePage> {
       });
   }
 
-  openVideo(href) {
+  openVideo(href) async {
+    await Storage.setString("watchID", href);
     print("MyTube.openVideo: $href");
     this.webViewController!.readAnchor(false);
     showDialog(
@@ -196,8 +207,8 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (_) {
         return Video(url: url + href); 
       }
-    ).then((valueFromDialog){
-      print("MyTube.openVideo: return");
+    ).then((valueFromDialog) async {
+      await Storage.setString("watchID", "");
       this.webViewController!.readAnchor(true);
     });
   }

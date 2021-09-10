@@ -5,6 +5,7 @@ import 'package:mytube/storage.dart';
 import 'package:mytube/youtube.dart';
 import 'dart:ui'; 
 import 'dart:async';
+import 'package:mytube/video/fileSave.dart';
 
 class Video extends StatefulWidget {
   final String url;
@@ -77,8 +78,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
               color: Colors.white,
             ),
             onPressed: () {
-              print('MyTube.file_copy');
-              alert("還沒有寫，另存新檔");
+              fileSave(context, this.widget.url); 
             }
           ),
         ],

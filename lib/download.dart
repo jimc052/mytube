@@ -9,15 +9,24 @@ class Download {
   Duration duration = Duration(seconds: 0);
   final yt = YoutubeExplode();
   bool stop = false;
+  var audio;
+
+  static Future<String> folder() async {
+    final methodChannel = const MethodChannel('com.flutter/MethodChannel');
+    String directory = await methodChannel.invokeMethod('getDownloadsDirectory');
+    return directory + '/MyTube';
+  }
 
   Future<void> getVideo(String url) async {
     this.url = url;
     try {
-      final methodChannel = const MethodChannel('com.flutter/MethodChannel');
-      String directory = await methodChannel.invokeMethod('getDownloadsDirectory');
-      path = directory + '/MyTube';
+      // final methodChannel = const MethodChannel('com.flutter/MethodChannel');
+      // String directory = await methodChannel.invokeMethod('getDownloadsDirectory');
+      // path = directory + '/MyTube';
+      path = await Download.folder();
       // print("MyTube: $path");
-      Directory(path).createSync();
+      if(Directory(path).existsSync() == false)
+        Directory(path).createSync();
 
       var video = await yt.videos.get(url);
       title = video.title;
@@ -40,7 +49,7 @@ class Download {
       // var streamInfo = manifest.video.withHighestBitrate();
       // var audioStream = yt.videos.streamsClient.get(streamInfo);
 
-      var audio = streams.withHighestBitrate();
+      audio = streams.withHighestBitrate();
       var audioStream = yt.videos.streamsClient.get(audio); // 有聲音，但有 2倍長度
 
       var fileName = 'youtube.${audio.container.name.toString()}' // ${title}

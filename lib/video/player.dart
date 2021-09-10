@@ -288,8 +288,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
-    // print("MyTube.screen => height: $height, width: $width");
+    // double height = MediaQuery.of(context).size.height;
     return Container(
       width: width > 600 ? 600 : width,
       child: Column(children: [
