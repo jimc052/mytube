@@ -44,10 +44,7 @@ class Download {
     try {
       var manifest = await yt.videos.streamsClient.getManifest(url);
       var streams = manifest.muxed; // manifest.videoOnly;
-      List arr = [streams.withHighestBitrate(),
-        streams.first,
-        streams.last
-      ];
+      var audio1 = streams.withHighestBitrate();
       var audio2 = streams.first;
       var audio3 = streams.last;
 
