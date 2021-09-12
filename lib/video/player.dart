@@ -112,12 +112,27 @@ class _PlayerState extends State<Player> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+
     return Material(
       child: Container(
         decoration: new BoxDecoration(color: Colors.white),
         padding: EdgeInsets.all(0.0), //容器内补白
         width: double.infinity,
-        child: download == null || download.title.length == 0 ? loading() : step2()
+        child: download == null || download.title.length == 0 ? loading() : 
+          (width < height  
+            ? Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: step2()
+            )
+            : Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: step2()
+            )
+          )
       )
     );
   }
@@ -150,76 +165,75 @@ class _PlayerState extends State<Player> {
     );
   }
 
-  Widget step2(){
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if(processing == 100)
-          PlayerControler(fileName: download.fileName),
-          // Expanded(flex: 1,  child: PlayerControler(fileName: download.fileName)),
-        Expanded( flex: 1,
-          child: Container(
-            //  margin: const EdgeInsets.all(15.0),
-            padding: EdgeInsets.symmetric(horizontal: 8.0),
-            // decoration: BoxDecoration(
-            //   border: Border.all(color: Colors.blueAccent)
-            // ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(download.title,
+  List<Widget> step2(){
+    List<Widget> widget = [];
+    if(processing == 100)
+      widget.add(PlayerControler(fileName: download.fileName));
+    widget.add(Expanded( flex: 1,
+        child: Container(
+          //  margin: const EdgeInsets.all(15.0),
+          padding: EdgeInsets.symmetric(horizontal: 8.0),
+          // decoration: BoxDecoration(
+          //   border: Border.all(color: Colors.blueAccent)
+          // ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(download.title,
+                textAlign: TextAlign.left,
+                style: new TextStyle(
+                  color: Colors.blue,
+                  fontSize: 20,
+                )
+              ),
+              if(download.author.length > 0)
+                Text("作者：" + download.author,
                   textAlign: TextAlign.left,
                   style: new TextStyle(
-                    color: Colors.blue,
+                    // color: Colors.blue,
                     fontSize: 20,
                   )
                 ),
-                if(download.author.length > 0)
-                  Text("作者：" + download.author,
-                    textAlign: TextAlign.left,
-                    style: new TextStyle(
-                      // color: Colors.blue,
-                      fontSize: 20,
-                    )
-                  ),
-                if(processing < 100)
-                  Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
-                    textAlign: TextAlign.left,
-                    style: new TextStyle(
-                      // color: Colors.blue,
-                      fontSize: 20,
-                    )
-                  ),
-                if(processing < 100)
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(height: 30,),
-                      LinearProgressIndicator(  
-                        backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation(Colors.blue),
-                        value: processing.toDouble() / 100,  
-                      ),
-                      Container(height: 10,),
-                      Text(processing.toString(),
-                        textAlign: TextAlign.center,
-                        style: new TextStyle(
-                          // color: Colors.blue,
-                          fontSize: 20,
-                        )
-                      ),
-                    ]
-                  ),
-                ]
-            )
-          ),
-        )
-      ]
+              if(processing < 100)
+                Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
+                  textAlign: TextAlign.left,
+                  style: new TextStyle(
+                    // color: Colors.blue,
+                    fontSize: 20,
+                  )
+                ),
+              if(processing < 100)
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(height: 30,),
+                    LinearProgressIndicator(  
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation(Colors.blue),
+                      value: processing.toDouble() / 100,  
+                    ),
+                    Container(height: 10,),
+                    Text(processing.toString(),
+                      textAlign: TextAlign.center,
+                      style: new TextStyle(
+                        // color: Colors.blue,
+                        fontSize: 20,
+                      )
+                    ),
+                  ]
+                ),
+              ]
+          )
+        ),
+      )
     );
+
+    return widget;
   }
+
+
 }
 
 class PlayerControler extends StatefulWidget {
@@ -256,6 +270,7 @@ class _PlayerControlerState extends State<PlayerControler> {
       });
       setState(() {
         _duration = _controller!.value.duration;
+        
       });
       // 
     })
@@ -288,9 +303,13 @@ class _PlayerControlerState extends State<PlayerControler> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    // double height = MediaQuery.of(context).size.height;
+    double height = MediaQuery.of(context).size.height;
+    
     return Container(
-      width: width > 600 ? 600 : width,
+      width: (width < height ? width : ((height - 160) * _controller!.value.aspectRatio).roundToDouble()),
+      // decoration: BoxDecoration(
+      //   border: Border.all(color: Colors.blueAccent)
+      // ),
       child: Column(children: [
         Container(
           child: _controller!.value.isInitialized
@@ -343,7 +362,7 @@ class _PlayerControlerState extends State<PlayerControler> {
             // if(_duration.inSeconds > 0)
           ]
         ),
-    ]),
+      ]),
     );
   }
 }

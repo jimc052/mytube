@@ -84,6 +84,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.didChangeDependencies();
 
     String watchID = await Storage.getString("watchID");
+    // watchID = "/watch?v=sTjJ1LlviKM";
+    // watchID = "/watch?v=iP8SqetfseI";
     if(watchID.length > 0){
       new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
         openVideo(watchID); // "/watch?v=sTjJ1LlviKM");
