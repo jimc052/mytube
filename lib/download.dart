@@ -9,7 +9,7 @@ class Download {
   Duration duration = Duration(seconds: 0);
   final yt = YoutubeExplode();
   bool stop = false;
-  var audio;
+  var audio = null, streams;
 
   static Future<String> folder() async {
     final methodChannel = const MethodChannel('com.flutter/MethodChannel');
@@ -20,14 +20,6 @@ class Download {
   Future<void> getVideo(String url) async {
     this.url = url;
     try {
-      // final methodChannel = const MethodChannel('com.flutter/MethodChannel');
-      // String directory = await methodChannel.invokeMethod('getDownloadsDirectory');
-      // path = directory + '/MyTube';
-      path = await Download.folder();
-      // print("MyTube: $path");
-      if(Directory(path).existsSync() == false)
-        Directory(path).createSync();
-
       var video = await yt.videos.get(url);
       title = video.title;
       author = video.author;
@@ -40,35 +32,28 @@ class Download {
     }
   }
 
-  Future<void> getVideoStream() async {
+  Future<dynamic> getVideoStream() async {
     try {
+      print("MyTube.url: $url");
       var manifest = await yt.videos.streamsClient.getManifest(url);
-      var streams = manifest.muxed; // manifest.videoOnly;
-      var audio1 = streams.withHighestBitrate();
-      var audio2 = streams.first;
-      var audio3 = streams.last;
+      streams = manifest.muxed; // manifest.videoOnly;
 
-      // var streams.videoOnly.where((e) => e.container == Container)
-      // audio2.videoQuality == VideoQuality.
-      print("MyTube.audio1.size: ${audio1.size}, videoQuality: ${audio1.videoQuality}, videoCodec: ${audio1.videoCodec}, audioCodec: ${audio1.audioCodec}");
-      print("MyTube.audio2.size: ${audio2.size}, videoQuality: ${audio2.videoQuality}, videoCodec: ${audio2.videoCodec}, audioCodec: ${audio2.audioCodec}");
-      print("MyTube.audio3.size: ${audio3.size}, videoQuality: ${audio3.videoQuality}, videoCodec: ${audio3.videoCodec}, audioCodec: ${audio3.audioCodec}");
-
-      if(audio2.videoQuality.toString().indexOf(".medium") > -1)
-        audio = audio2;
-      else if(audio3.videoQuality.toString().indexOf(".medium") > -1)
-        audio = audio3;
-      else
-        audio = audio2.size.totalBytes > audio3.size.totalBytes ? audio2 : audio3;
-      print("MyTube.audio.size: ${audio.size}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
-      /*
-      var manifest = await yt.videos.streamsClient.getManifest(id);
-      var streams = manifest.videoOnly;
-
-      // Get the audio track with the highest bitrate.
-      var audio = streams.first;
-      var audioStream = yt.videos.streamsClient.get(audio);
-      */
+      List arr = streams.toList();
+      for(int i = 0; i < arr.length; i++) {
+        print("MyTube.${i + 1}: ${arr[i].size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, " 
+          + "${arr[i].videoQualityLabel}, ${arr[i].videoQuality}, " 
+          + "videoCodec: ${arr[i].videoCodec}, audioCodec: ${arr[i].audioCodec}, " 
+          + arr[i].container.name.toString());
+        if(arr[i].videoQualityLabel == "360p") {
+          audio = arr[i];
+          break;
+        }
+        // streams.first.size.totalMegaBytes.toStringAsFixed(3);
+      }
+      
+      print("MyTube.audio: ${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, videoQualityLabel: ${audio.videoQualityLabel}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
+      print("MyTube.container: " + audio.container.name.toString());
+      return streams;
     } catch(e) {
       print(e);
       throw e;
@@ -78,7 +63,7 @@ class Download {
   Future<void> getAudioStream() async { // ok 的
     try {
       var manifest = await yt.videos.streamsClient.getManifest(url);
-      var streams = manifest.audioOnly;
+      streams = manifest.audioOnly;
       audio = streams.last;
     } catch(e) {
       print(e);
@@ -95,6 +80,11 @@ class Download {
 
       fileName = ((fileName.length == 0) ? 'youtube' : fileName) 
         + '.${audio.container.name.toString()}';
+
+      path = await Download.folder();
+      // print("MyTube: $path");
+      if(Directory(path).existsSync() == false)
+        Directory(path).createSync();
 
       if(folder.length > 0 && Directory(path + '/$folder').existsSync() == false) {
           Directory(path + '/$folder').createSync();

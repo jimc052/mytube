@@ -7,8 +7,8 @@ import 'package:mytube/video.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 import 'package:mytube/youtube.dart';
-import 'package:mytube/storage.dart';
-import 'package:mytube/video/fileSave.dart';
+import 'package:mytube/system/system.dart';
+// import 'package:mytube/video/fileSave.dart';
 
 void main() async {
   runApp(MyApp());
@@ -84,8 +84,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.didChangeDependencies();
 
     String watchID = await Storage.getString("watchID");
-    // watchID = "/watch?v=sTjJ1LlviKM";
-    // watchID = "/watch?v=iP8SqetfseI";
+    watchID = "/watch?v=sTjJ1LlviKM";
+    // watchID = "/watch?v=iP8SqetfseI"; // test................
     if(watchID.length > 0){
       new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
         openVideo(watchID); // "/watch?v=sTjJ1LlviKM");
@@ -96,6 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void reassemble() async {
     super.reassemble();
+    
   }
   @override
   dispose() {

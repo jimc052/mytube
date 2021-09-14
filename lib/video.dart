@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mytube/video/player.dart';
 import 'package:mytube/video/browser.dart';
-import 'package:mytube/storage.dart';
+import 'package:mytube/system/system.dart';
 import 'package:mytube/youtube.dart';
 import 'dart:ui'; 
 import 'dart:async';
@@ -95,48 +95,6 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         },
         child: local == -1 ? Container() : Icon(local == 0 ? Icons.vertical_align_bottom_sharp : Icons.wb_cloudy_sharp, size: 30, color: Colors.white,),
       )
-    );
-  }
-
-  void alert(msg) {
-    AlertDialog dialog = AlertDialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(0)),
-      ),
-      content: Row(
-        children: <Widget>[
-          Icon(
-            Icons.warning,
-            color: Colors.red,
-            size: 20,
-          ),
-          Padding(padding: EdgeInsets.only(right: 10)),
-          Text(msg,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 20,
-            ),
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        FlatButton(
-          onPressed: () {
-            Navigator.pop(context, true);
-          },
-          child: Text(
-            "CLOSE",
-            style: TextStyle(color: Colors.black),
-          ),
-        ),
-      ],
-    );
-
-    showDialog(
-      barrierDismissible: false,
-      context: context, 
-      builder: (BuildContext context) => dialog,
     );
   }
 }

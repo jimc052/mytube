@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mytube/download.dart';
 import 'package:video_player/video_player.dart';
-import 'package:mytube/storage.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:mytube/system/system.dart';
 
 class Player extends StatefulWidget {
   final String url;
@@ -15,62 +15,19 @@ class Player extends StatefulWidget {
 }
 
 class _PlayerState extends State<Player> {
-  int processing = 0;
+  int processing = -1;
   Download download = new Download();
   @override
   void initState() {
     super.initState();
   }
 
-  void alert(msg) {
-    AlertDialog dialog = AlertDialog(
-      backgroundColor: Colors.yellow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(15)),
-      ),
-      content: Row(
-        children: <Widget>[
-          Icon(
-            Icons.warning,
-            color: Colors.red,
-            size: 30,
-          ),
-          Padding(padding: EdgeInsets.only(right: 10)),
-          Text(msg,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 30,
-            ),
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        FlatButton(
-          onPressed: () {
-            Navigator.pop(context, true);
-          },
-          child: Text(
-            "CLOSE",
-            style: TextStyle(color: Colors.black),
-          ),
-        ),
-      ],
-    );
-
-    showDialog(
-      barrierDismissible: false,
-      context: context, 
-      builder: (BuildContext context) => dialog,
-    );
-
-    //print("in alert()");
-  }
-
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
     String url = await Storage.getString("url");
-    print("MyTube.url: $url");
+    url = ""; // for test................
+    print("MyTube.Storage.url: $url");
     try{
       if(url == this.widget.url) {
         download.fileName = await Storage.getString("fileName");
@@ -81,23 +38,14 @@ class _PlayerState extends State<Player> {
         setState(() { });
       } else {
         await download.getVideo(this.widget.url);
-        Storage.setInt("position", 0);
-        await download.execute(onProcessing: (int process){
-          processing = process;
-          if(process == 100) {
-            Storage.setString("url", this.widget.url);
-            Storage.setString("fileName", download.fileName);
-            Storage.setString("title", download.title);
-            Storage.setString("author", download.author);
-            Storage.setInt("duration", download.duration.inMilliseconds);
-          }
-          setState(() { });
-        });
+        await download.getVideoStream();
+        setState(() { });
+        // await getVideo();
       }
       print("MyTube.player.download: ${download.fileName}");
     } catch(e) {
       print("MyTube.player: $e");
-      alert(e.toString());
+      alert(context, e.toString());
     }
   }
   @override
@@ -108,6 +56,22 @@ class _PlayerState extends State<Player> {
   @override
   void reassemble() async {
     super.reassemble();
+  }
+
+  Future<void> getVideo() async {
+    await download.getVideo(this.widget.url);
+    Storage.setInt("position", 0);
+    await download.execute(onProcessing: (int process){
+      processing = process;
+      if(process == 100) {
+        Storage.setString("url", this.widget.url);
+        Storage.setString("fileName", download.fileName);
+        Storage.setString("title", download.title);
+        Storage.setString("author", download.author);
+        Storage.setInt("duration", download.duration.inMilliseconds);
+      }
+      setState(() { });
+    });
   }
 
   @override
@@ -195,7 +159,7 @@ class _PlayerState extends State<Player> {
                     fontSize: 20,
                   )
                 ),
-              if(processing < 100)
+              if(download.duration.inSeconds > 0)
                 Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
                   textAlign: TextAlign.left,
                   style: new TextStyle(
@@ -203,7 +167,7 @@ class _PlayerState extends State<Player> {
                     fontSize: 20,
                   )
                 ),
-              if(processing < 100)
+              if(processing < 100 && processing > -1)
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -224,7 +188,9 @@ class _PlayerState extends State<Player> {
                     ),
                   ]
                 ),
-              ]
+              if(download.streams != null && processing == -1)
+                list()
+            ]
           )
         ),
       )
@@ -233,7 +199,108 @@ class _PlayerState extends State<Player> {
     return widget;
   }
 
+  final scrollController = ScrollController();
+  Widget list(){
+    List arr = download.streams.toList();
+    return Expanded( flex: 1,
+      child: Container(//容器内补白
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.lightBlue)
+        ),
 
+        margin: EdgeInsets.only(top: 10.0, bottom: 10.0), 
+        padding: EdgeInsets.all(0.0),
+        child: ListView.builder(
+          controller: scrollController,
+          shrinkWrap: true,
+          itemCount: arr.length,
+          itemBuilder: (BuildContext context, int index){ 
+            return
+            Material(
+              child:  InkWell(
+                onTap: (){
+                  // textEditingControllerD.text = name.replaceAll(path + "/", "");
+                },
+                // splashColor: Colors.red,
+                child: Container(
+                  padding: EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Cell(
+                        Text("${arr[index].size.totalMegaBytes.toStringAsFixed(2) + 'MB'}",
+                          style: TextStyle(
+                            // color: Colors.red,
+                            fontSize: 20,
+                          ),
+                        )
+                      ),
+                      Cell(Text("${arr[index].videoQualityLabel}",
+                        style: TextStyle(
+                          // color: Colors.red,
+                          fontSize: 20,
+                        ),
+                      )),
+                      Cell(Text("${arr[index].container.name.toString()}",
+                        style: TextStyle(
+                          // color: Colors.red,
+                          fontSize: 20,
+                        ),
+                      )),
+                    ],
+                  )
+                )
+              )
+            ); 
+            // Container(
+            //   padding: EdgeInsets.only(top: 0.0),
+            //   child: Text("${arr[index].size}")
+            // );
+          },
+        )
+      )
+    );
+  }
+
+  Widget list2(){
+    return GridView(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3, //横轴三个子widget
+          childAspectRatio: 1.0 //宽高比为1时，子widget
+      ),
+      children:<Widget>[
+        Icon(Icons.ac_unit),
+        Icon(Icons.airport_shuttle),
+        Icon(Icons.all_inclusive),
+        Icon(Icons.beach_access),
+        Icon(Icons.cake),
+        Icon(Icons.free_breakfast)
+      ]
+    );
+  }
+}
+
+class Cell extends StatelessWidget {
+  Widget child;
+  int flex;
+  double width;
+  Cell(this.child, {this.flex = 0, this.width = 0});
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    Widget view;
+
+    if(width > 0) {
+      view = Container(
+        width: width,
+        child: child
+      );
+    } else if(flex > 0) {
+      view = Expanded(flex: flex, child: child);
+    } else {
+      view = child;
+    }
+    return view;
+  }
 }
 
 class PlayerControler extends StatefulWidget {
@@ -306,10 +373,11 @@ class _PlayerControlerState extends State<PlayerControler> {
     double height = MediaQuery.of(context).size.height;
     
     return Container(
-      width: (width < height ? width : ((height - 160) * _controller!.value.aspectRatio).roundToDouble()),
-      // decoration: BoxDecoration(
-      //   border: Border.all(color: Colors.blueAccent)
-      // ),
+      width: (width < height ? width : (((height - 160) * _controller!.value.aspectRatio).roundToDouble())),
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.transparent)
+      ),
       child: Column(children: [
         Container(
           child: _controller!.value.isInitialized
