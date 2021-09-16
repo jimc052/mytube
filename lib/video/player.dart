@@ -17,6 +17,7 @@ class Player extends StatefulWidget {
 class _PlayerState extends State<Player> {
   int processing = -1;
   Download download = new Download();
+  var player;
   @override
   void initState() {
     super.initState();
@@ -52,6 +53,7 @@ class _PlayerState extends State<Player> {
   dispose() {
     super.dispose();
     download.stop = true;
+    download.dispose();
   }
   @override
   void reassemble() async {
@@ -59,7 +61,7 @@ class _PlayerState extends State<Player> {
   }
 
   Future<void> getVideo() async {
-    await download.getVideo(this.widget.url);
+    // await download.getVideo(this.widget.url);
     Storage.setInt("position", 0);
     await download.execute(onProcessing: (int process){
       processing = process;
@@ -84,19 +86,20 @@ class _PlayerState extends State<Player> {
         decoration: new BoxDecoration(color: Colors.white),
         padding: EdgeInsets.all(0.0), //容器内补白
         width: double.infinity,
+        height: double.infinity,
         child: download == null || download.title.length == 0 ? loading() : 
-          (width < height  
-            ? Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: step2()
-            )
-            : Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: step2()
-            )
+        (width < height  
+          ? Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: show()
           )
+          : Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: show()
+          )
+        )
       )
     );
   }
@@ -129,10 +132,10 @@ class _PlayerState extends State<Player> {
     );
   }
 
-  List<Widget> step2(){
+  List<Widget> show(){
     List<Widget> widget = [];
     if(processing == 100)
-      widget.add(PlayerControler(fileName: download.fileName));
+      widget.add(PlayerControler(fileName: download.fileName, controller: player,));
     widget.add(Expanded( flex: 1,
         child: Container(
           //  margin: const EdgeInsets.all(15.0),
@@ -144,29 +147,7 @@ class _PlayerState extends State<Player> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(download.title,
-                textAlign: TextAlign.left,
-                style: new TextStyle(
-                  color: Colors.blue,
-                  fontSize: 20,
-                )
-              ),
-              if(download.author.length > 0)
-                Text("作者：" + download.author,
-                  textAlign: TextAlign.left,
-                  style: new TextStyle(
-                    // color: Colors.blue,
-                    fontSize: 20,
-                  )
-                ),
-              if(download.duration.inSeconds > 0)
-                Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
-                  textAlign: TextAlign.left,
-                  style: new TextStyle(
-                    // color: Colors.blue,
-                    fontSize: 20,
-                  )
-                ),
+              information(),
               if(processing < 100 && processing > -1)
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -188,97 +169,156 @@ class _PlayerState extends State<Player> {
                     ),
                   ]
                 ),
+              // Expanded( flex: 1, child: Container()),
               if(download.streams != null && processing == -1)
-                list()
+                list(),
+              if(processing == 100)
+                ElevatedButton(
+                  child: Text('重新選擇'),
+                  onPressed: () {
+                    processing = -1;
+                    setState(() {});
+                    player = null;
+                  },
+                )
             ]
           )
         ),
       )
     );
-
     return widget;
   }
 
-  final scrollController = ScrollController();
+  Widget information(){
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(download.title,
+          textAlign: TextAlign.left,
+          style: new TextStyle(
+            color: Colors.blue,
+            fontSize: 20,
+          )
+        ),
+        if(download.author.length > 0)
+          Text("作者：" + download.author,
+            textAlign: TextAlign.left,
+            style: new TextStyle(
+              // color: Colors.blue,
+              fontSize: 20,
+            )
+          ),
+        if(download.duration.inSeconds > 0)
+          Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
+            textAlign: TextAlign.left,
+            style: new TextStyle(
+              // color: Colors.blue,
+              fontSize: 20,
+            )
+          ),
+      ]
+    );
+  }
+
   Widget list(){
-    List arr = download.streams.toList();
     return Expanded( flex: 1,
       child: Container(//容器内补白
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.lightBlue)
+          // border: Border.all(color: Colors.lightBlue)
         ),
-
-        margin: EdgeInsets.only(top: 10.0, bottom: 10.0), 
-        padding: EdgeInsets.all(0.0),
-        child: ListView.builder(
-          controller: scrollController,
-          shrinkWrap: true,
-          itemCount: arr.length,
-          itemBuilder: (BuildContext context, int index){ 
-            return
-            Material(
-              child:  InkWell(
-                onTap: (){
-                  // textEditingControllerD.text = name.replaceAll(path + "/", "");
-                },
-                // splashColor: Colors.red,
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Cell(
-                        Text("${arr[index].size.totalMegaBytes.toStringAsFixed(2) + 'MB'}",
-                          style: TextStyle(
-                            // color: Colors.red,
-                            fontSize: 20,
-                          ),
-                        )
-                      ),
-                      Cell(Text("${arr[index].videoQualityLabel}",
-                        style: TextStyle(
-                          // color: Colors.red,
-                          fontSize: 20,
-                        ),
-                      )),
-                      Cell(Text("${arr[index].container.name.toString()}",
-                        style: TextStyle(
-                          // color: Colors.red,
-                          fontSize: 20,
-                        ),
-                      )),
-                    ],
-                  )
-                )
-              )
-            ); 
-            // Container(
-            //   padding: EdgeInsets.only(top: 0.0),
-            //   child: Text("${arr[index].size}")
-            // );
-          },
-        )
+        // margin: EdgeInsets.only(top: 10.0, bottom: 10.0), 
+        // padding: EdgeInsets.all(0.0),
+        child: gridView() // videoList()
       )
     );
   }
 
-  Widget list2(){
-    return GridView(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3, //横轴三个子widget
-          childAspectRatio: 1.0 //宽高比为1时，子widget
-      ),
-      children:<Widget>[
-        Icon(Icons.ac_unit),
-        Icon(Icons.airport_shuttle),
-        Icon(Icons.all_inclusive),
-        Icon(Icons.beach_access),
-        Icon(Icons.cake),
-        Icon(Icons.free_breakfast)
-      ]
+  Widget gridView(){
+    List arr = download.streams.toList();
+    double width = MediaQuery.of(context).size.width;
+    int cells = (width / 150).ceil();
+    print("MyTube.width: $width, cells: $cells");
+    return GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cells, //每行三列
+            childAspectRatio: 1.0, //显示区域宽高相等
+            mainAxisSpacing: 5.0,
+            crossAxisSpacing: 5.0,
+        ),
+        itemCount: arr.length,
+        itemBuilder: (context, index) {
+          return Material(
+          child:  InkWell(
+            onTap: () async {
+              download.audio = download.streams.elementAt(index);
+              await getVideo();
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                // border: Border.all(color: Colors.red)
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  stops: [
+                    0.1,
+                    0.4,
+                    0.6,
+                    0.9,
+                  ],
+                  colors: [
+                    Colors.yellow,
+                    Colors.red,
+                    Colors.indigo,
+                    Colors.teal,
+                  ],
+                  // tileMode: TileMode.repeated, // repeats the gradient over the canvas
+                )
+              ),
+              padding: EdgeInsets.all(5),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text("${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
+                    style: TextStyle(
+                      // color: Colors.red,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Container(height: 5,),
+                  Text("${arr[index].videoQuality}".replaceAll("VideoQuality.", ""),
+                    style: TextStyle(
+                      // color: Colors.red,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Container(height: 5,),
+                  // Cell(
+                  //   Text("${arr[index].videoQualityLabel}",
+                  //     style: TextStyle(
+                  //       // color: Colors.red,
+                  //       fontSize: 20,
+                  //     ),
+                  //   )
+                  // ),
+                  
+                  Text("${arr[index].container.name.toString()}",
+                    style: TextStyle(
+                      // color: Colors.red,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              )
+            )
+          )
+        ); 
+        }
     );
   }
 }
-
+/*
 class Cell extends StatelessWidget {
   Widget child;
   int flex;
@@ -302,11 +342,13 @@ class Cell extends StatelessWidget {
     return view;
   }
 }
+*/
 
 class PlayerControler extends StatefulWidget {
   final String fileName;
+  dynamic controller;
 
-  PlayerControler({Key? key, required this.fileName}) : super(key: key);
+  PlayerControler({Key? key, required this.fileName, required this.controller}) : super(key: key);
 
   @override
   _PlayerControlerState createState() => _PlayerControlerState();
@@ -322,6 +364,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   @override
   void initState() {
     super.initState();
+    this.widget.controller = this;
     _controller = VideoPlayerController
     .file(File("file://" + widget.fileName))
     ..addListener(() {
@@ -335,11 +378,14 @@ class _PlayerControlerState extends State<PlayerControler> {
           }
         });
       });
-      setState(() {
-        _duration = _controller!.value.duration;
-        
-      });
-      // 
+      if(_controller != null){
+        try{
+          setState(() {
+            _duration = _controller!.value.duration;
+          });           
+        } catch(e){
+        }
+      }
     })
     ..initialize().then((_) {
       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
@@ -354,7 +400,7 @@ class _PlayerControlerState extends State<PlayerControler> {
     });
 
     eventChannel.receiveBroadcastStream().listen((data) async {
-      if(data == "unplugged") {
+      if(data == "unplugged" && _controller != null) {
         _controller!.pause();
       }
     });
@@ -362,8 +408,9 @@ class _PlayerControlerState extends State<PlayerControler> {
   
   @override
   void dispose() {
+    _controller!.pause();
     _controller!.dispose();
-    // if(timer != null) timer.cancel();
+    _controller = null;
     super.dispose();
   }
 

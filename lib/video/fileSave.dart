@@ -40,6 +40,7 @@ class _PanelState extends State<Panel> {
 
     try{
       await download.getVideo(this.widget.url);
+      await download.getVideoStream();
       textEditingControllerF.text = trimChar(download.title);
       textEditingControllerD.text = trimChar(download.author);
       // await download.execute(onProcessing: (int process){
@@ -115,11 +116,11 @@ class _PanelState extends State<Panel> {
       ),
       body:  processing > -1 
         ? loading() 
-        : (textEditingControllerF.text.length > 0 
+        : (download.title.length > 0 
           ? body() 
           : waiting()
       ),
-      floatingActionButton: (processing == -1 && textEditingControllerF.text.length > 0)
+      floatingActionButton: (processing == -1 && download.title.length > 0)
         ? FloatingActionButton(
           onPressed: () async {
             await download.execute(isVideo: isVideo, folder: textEditingControllerD.text, fileName: textEditingControllerF.text, onProcessing: (int process){
@@ -231,6 +232,91 @@ class _PanelState extends State<Panel> {
           )
         ]
       )
+    );
+  }
+  Widget gridView(){
+    List arr = download.streams.toList();
+    double width = MediaQuery.of(context).size.width;
+    int cells = (width / 150).ceil();
+    print("MyTube.width: $width, cells: $cells");
+    return GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cells, //每行三列
+            childAspectRatio: 1.0, //显示区域宽高相等
+            mainAxisSpacing: 5.0,
+            crossAxisSpacing: 5.0,
+        ),
+        itemCount: arr.length,
+        itemBuilder: (context, index) {
+          return Material(
+          child:  InkWell(
+            onTap: () async {
+              download.audio = download.streams.elementAt(index);
+              await download.execute(onProcessing: (int process){
+                processing = process;
+                setState(() { });
+              });
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                // border: Border.all(color: Colors.red)
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  stops: [
+                    0.1,
+                    0.4,
+                    0.6,
+                    0.9,
+                  ],
+                  colors: [
+                    Colors.yellow,
+                    Colors.red,
+                    Colors.indigo,
+                    Colors.teal,
+                  ],
+                  // tileMode: TileMode.repeated, // repeats the gradient over the canvas
+                )
+              ),
+              padding: EdgeInsets.all(10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text("${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
+                    style: TextStyle(
+                      // color: Colors.red,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Container(height: 10,),
+                  Text("${arr[index].videoQuality}".replaceAll("VideoQuality.", ""),
+                    style: TextStyle(
+                      // color: Colors.red,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Container(height: 10,),
+                  // Cell(
+                  //   Text("${arr[index].videoQualityLabel}",
+                  //     style: TextStyle(
+                  //       // color: Colors.red,
+                  //       fontSize: 20,
+                  //     ),
+                  //   )
+                  // ),
+                  Text("${arr[index].container.name.toString()}",
+                    style: TextStyle(
+                      // color: Colors.red,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              )
+            )
+          )
+        ); 
+        }
     );
   }
   

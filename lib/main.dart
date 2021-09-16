@@ -96,7 +96,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void reassemble() async {
     super.reassemble();
-    
   }
   @override
   dispose() {

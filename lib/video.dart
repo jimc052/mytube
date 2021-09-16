@@ -97,4 +97,6 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
       )
     );
   }
+
+  
 }

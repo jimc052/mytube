@@ -37,22 +37,21 @@ class Download {
       print("MyTube.url: $url");
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.muxed; // manifest.videoOnly;
-
-      List arr = streams.toList();
-      for(int i = 0; i < arr.length; i++) {
-        print("MyTube.${i + 1}: ${arr[i].size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, " 
-          + "${arr[i].videoQualityLabel}, ${arr[i].videoQuality}, " 
-          + "videoCodec: ${arr[i].videoCodec}, audioCodec: ${arr[i].audioCodec}, " 
-          + arr[i].container.name.toString());
-        if(arr[i].videoQualityLabel == "360p") {
-          audio = arr[i];
-          break;
-        }
-        // streams.first.size.totalMegaBytes.toStringAsFixed(3);
-      }
       
-      print("MyTube.audio: ${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, videoQualityLabel: ${audio.videoQualityLabel}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
-      print("MyTube.container: " + audio.container.name.toString());
+      // List arr = streams.toList();
+      // for(int i = 0; i < arr.length; i++) {
+      //   print("MyTube.${i + 1}: ${arr[i].size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, " 
+      //     + "${arr[i].videoQualityLabel}, ${arr[i].videoQuality}, " 
+      //     + "videoCodec: ${arr[i].videoCodec}, audioCodec: ${arr[i].audioCodec}, " 
+      //     + arr[i].container.name.toString());
+      //   if(arr[i].videoQualityLabel == "360p") {
+      //     audio = arr[i];
+      //     break;
+      //   }
+      //   // streams.first.size.totalMegaBytes.toStringAsFixed(3);
+      // }
+      
+     
       return streams;
     } catch(e) {
       print(e);
@@ -64,19 +63,26 @@ class Download {
     try {
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.audioOnly;
-      audio = streams.last;
+      // audio = streams.last;
     } catch(e) {
       print(e);
       throw e;
     }
   }
 
+  dispose(){
+    yt.close();
+  }
+
   Future<void> execute({String fileName = "", String folder = "", bool isVideo = true, required Function(int) onProcessing}) async {
     try {
-      if(isVideo == true)
-        await getVideoStream();
-      else 
-        await getAudioStream();
+      // if(isVideo == true)
+      //   await getVideoStream();
+      // else 
+      //   await getAudioStream();
+
+      print("MyTube.audio: ${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, videoQualityLabel: ${audio.videoQualityLabel}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
+      print("MyTube.container: " + audio.container.name.toString());
 
       fileName = ((fileName.length == 0) ? 'youtube' : fileName) 
         + '.${audio.container.name.toString()}';
@@ -109,7 +115,7 @@ class Download {
         output.add(data);
       }
       await output.close();
-      yt.close();
+      
     } catch(e) {
       print(e);
       throw e;
