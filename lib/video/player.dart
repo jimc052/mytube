@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:mytube/system/system.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class Player extends StatefulWidget {
   final String url;
@@ -15,9 +16,10 @@ class Player extends StatefulWidget {
 }
 
 class _PlayerState extends State<Player> {
-  int processing = -1;
+  int processing = -1, streamsTimes = 0;
   Download download = new Download();
-  var player;
+  var player, timer;
+
   @override
   void initState() {
     super.initState();
@@ -27,7 +29,7 @@ class _PlayerState extends State<Player> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
     String url = await Storage.getString("url");
-    url = ""; // for test................
+    // url = ""; // for test................
     print("MyTube.Storage.url: $url");
     try{
       if(url == this.widget.url) {
@@ -58,6 +60,7 @@ class _PlayerState extends State<Player> {
   @override
   void reassemble() async {
     super.reassemble();
+    streamsTimes = 0;
   }
 
   Future<void> getVideo() async {
@@ -147,31 +150,16 @@ class _PlayerState extends State<Player> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              information(),
-              if(processing < 100 && processing > -1)
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(height: 30,),
-                    LinearProgressIndicator(  
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation(Colors.blue),
-                      value: processing.toDouble() / 100,  
-                    ),
-                    Container(height: 10,),
-                    Text(processing.toString(),
-                      textAlign: TextAlign.center,
-                      style: new TextStyle(
-                        // color: Colors.blue,
-                        fontSize: 20,
-                      )
-                    ),
-                  ]
-                ),
-              // Expanded( flex: 1, child: Container()),
+              Expanded( flex: 1, 
+                child: Scrollbar( // 显示进度条
+                  child: SingleChildScrollView(
+                    // padding: EdgeInsets.all(16.0),
+                    child: information()
+                  )
+                )
+              ),
               if(download.streams != null && processing == -1)
-                list(),
+                stremsGridView(),
               if(processing == 100)
                 ElevatedButton(
                   child: Text('重新選擇'),
@@ -190,6 +178,7 @@ class _PlayerState extends State<Player> {
   }
 
   Widget information(){
+    double fontSize = 20 + (MediaQuery.of(context).size.width > 800 ? 4 : 0);
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +187,7 @@ class _PlayerState extends State<Player> {
           textAlign: TextAlign.left,
           style: new TextStyle(
             color: Colors.blue,
-            fontSize: 20,
+            fontSize: fontSize,
           )
         ),
         if(download.author.length > 0)
@@ -206,7 +195,7 @@ class _PlayerState extends State<Player> {
             textAlign: TextAlign.left,
             style: new TextStyle(
               // color: Colors.blue,
-              fontSize: 20,
+              fontSize: fontSize - 2,
             )
           ),
         if(download.duration.inSeconds > 0)
@@ -214,32 +203,46 @@ class _PlayerState extends State<Player> {
             textAlign: TextAlign.left,
             style: new TextStyle(
               // color: Colors.blue,
-              fontSize: 20,
+              fontSize: fontSize - 2,
             )
           ),
+        if(processing < 100 && processing > -1) // LinearProgressIndicator
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(height: 30,),
+              LinearProgressIndicator(  
+                backgroundColor: Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation(Colors.blue),
+                value: processing.toDouble() / 100,  
+              ),
+              Container(height: 10,),
+              Text(processing.toString(),
+                textAlign: TextAlign.center,
+                style: new TextStyle(
+                  color: Colors.blue,
+                  fontSize: 20,
+                )
+              ),
+            ]
+          )
       ]
     );
   }
 
-  Widget list(){
-    return Expanded( flex: 1,
-      child: Container(//容器内补白
-        decoration: BoxDecoration(
-          // border: Border.all(color: Colors.lightBlue)
-        ),
-        // margin: EdgeInsets.only(top: 10.0, bottom: 10.0), 
-        // padding: EdgeInsets.all(0.0),
-        child: gridView() // videoList()
-      )
-    );
-  }
-
-  Widget gridView(){
+  Widget stremsGridView(){
     List arr = download.streams.toList();
     double width = MediaQuery.of(context).size.width;
-    int cells = (width / 150).ceil();
-    print("MyTube.width: $width, cells: $cells");
-    return GridView.builder(
+    int w = width < 800 ? 150 : 180;
+    int cells = (width / w).ceil();
+    return Container(//容器内补白
+      decoration: BoxDecoration(
+        // border: Border.all(color: Colors.lightBlue)
+      ),
+      margin: EdgeInsets.only(top: 10.0, bottom: 10.0), 
+      // padding: EdgeInsets.all(0.0),
+      child:  GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: cells, //每行三列
             childAspectRatio: 1.0, //显示区域宽高相等
@@ -247,74 +250,100 @@ class _PlayerState extends State<Player> {
             crossAxisSpacing: 5.0,
         ),
         itemCount: arr.length,
+        shrinkWrap: true,
+        scrollDirection: Axis.vertical,
         itemBuilder: (context, index) {
+          String mb = "${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
+            quality = "${arr[index].videoQuality}".replaceAll("VideoQuality.", "");
+          Color bg = Colors.grey.shade200, color = Colors.black;
+          if(quality.indexOf("medium") == 0){
+            bg = Colors.green.shade500;
+            color = Colors.white;
+          } else if(quality.indexOf("high") == 0) {
+            bg = Colors.red.shade500; 
+            color = Colors.white;
+          }
+          double fontSize = width < 800 ? 16 : 24;
+          if(index == arr.length -1 && streamsTimes == 0) { // 在第一次自動觸發
+            toast();
+            streamsTimes++;
+          }
           return Material(
-          child:  InkWell(
-            onTap: () async {
-              download.audio = download.streams.elementAt(index);
-              await getVideo();
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                // border: Border.all(color: Colors.red)
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  stops: [
-                    0.1,
-                    0.4,
-                    0.6,
-                    0.9,
+            child: InkWell(
+              onTap: () async {
+                choiceVideo(index);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  color: bg
+                  // gradient: LinearGradient(
+                  //   begin: Alignment.topRight,
+                  //   end: Alignment.bottomLeft,
+                  //   stops: [
+                  //     0.1,
+                  //     0.4,
+                  //     0.6,
+                  //     0.9,
+                  //   ],
+                  //   colors: [
+                  //     Colors.yellow,
+                  //     Colors.red,
+                  //     Colors.indigo,
+                  //     Colors.teal,
+                  //   ],
+                  // )
+                ),
+                padding: EdgeInsets.all(5),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text( mb,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: fontSize,
+                      ),
+                    ),
+                    Container(height: 5,),
+                    Text( quality,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: fontSize,
+                      ),
+                    ),
+                    Container(height: 5,),
+                    Text("${arr[index].container.name.toString()}",
+                      style: TextStyle(
+                        color: color,
+                        fontSize: fontSize,
+                      ),
+                    ),
                   ],
-                  colors: [
-                    Colors.yellow,
-                    Colors.red,
-                    Colors.indigo,
-                    Colors.teal,
-                  ],
-                  // tileMode: TileMode.repeated, // repeats the gradient over the canvas
                 )
-              ),
-              padding: EdgeInsets.all(5),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text("${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
-                    style: TextStyle(
-                      // color: Colors.red,
-                      fontSize: 18,
-                    ),
-                  ),
-                  Container(height: 5,),
-                  Text("${arr[index].videoQuality}".replaceAll("VideoQuality.", ""),
-                    style: TextStyle(
-                      // color: Colors.red,
-                      fontSize: 18,
-                    ),
-                  ),
-                  Container(height: 5,),
-                  // Cell(
-                  //   Text("${arr[index].videoQualityLabel}",
-                  //     style: TextStyle(
-                  //       // color: Colors.red,
-                  //       fontSize: 20,
-                  //     ),
-                  //   )
-                  // ),
-                  
-                  Text("${arr[index].container.name.toString()}",
-                    style: TextStyle(
-                      // color: Colors.red,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              )
             )
           )
         ); 
         }
+      )
+    );
+  }
+  void choiceVideo(index) async {
+    if(timer != null) timer.cancel();
+    download.audio = download.streams.elementAt(index);
+    await getVideo();
+  }
+
+  toast(){
+    timer = Timer(Duration(seconds: 5), () => choiceVideo(0));
+    Fluttertoast.showToast(
+      msg: "5 秒後，自動選取第一個視頻!!",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.black45,
+      textColor: Colors.white,
+      fontSize: 16.0
     );
   }
 }
@@ -359,7 +388,6 @@ class _PlayerControlerState extends State<PlayerControler> {
   VideoPlayerController? _controller;
   Duration _duration = Duration(seconds: 0);
   Duration _position = Duration(seconds: 0);
-  var timer;
 
   @override
   void initState() {
