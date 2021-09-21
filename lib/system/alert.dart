@@ -6,24 +6,26 @@ void alert(BuildContext context, String msg) {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(15)),
       ),
-      content: Row(
-        children: <Widget>[
-          Icon(
-            Icons.warning,
-            color: Colors.red,
-            size: 30,
-          ),
-          Padding(padding: EdgeInsets.only(right: 10)),
-          Text(msg,
-            style: TextStyle(
+      content: Container(
+        child: Row(
+          children: <Widget>[
+            Icon(
+              Icons.warning,
               color: Colors.red,
-              fontSize: 30,
+              size: 30,
             ),
-          ),
-        ],
+            Padding(padding: EdgeInsets.only(right: 10)),
+            Text(msg,
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 30,
+              ),
+            ),
+          ],
+        )
       ),
       actions: <Widget>[
-        FlatButton(
+        ElevatedButton(
           onPressed: () {
             Navigator.pop(context, true);
           },

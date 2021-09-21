@@ -40,10 +40,7 @@ class _PlayerState extends State<Player> {
         processing = 100;
         setState(() { });
       } else {
-        await download.getVideo(this.widget.url);
-        await download.getVideoStream();
-        setState(() { });
-        // await getVideo();
+        await getStream();
       }
       print("MyTube.player.download: ${download.fileName}");
     } catch(e) {
@@ -51,11 +48,13 @@ class _PlayerState extends State<Player> {
       alert(context, e.toString());
     }
   }
+
   @override
   dispose() {
-    super.dispose();
     download.stop = true;
     download.dispose();
+    Fluttertoast.cancel();
+    super.dispose();
   }
   @override
   void reassemble() async {
@@ -63,20 +62,29 @@ class _PlayerState extends State<Player> {
     streamsTimes = 0;
   }
 
+  Future<void> getStream() async {
+     await download.getVideo(this.widget.url);
+    await download.getVideoStream();
+    setState(() { });
+  }
   Future<void> getVideo() async {
     // await download.getVideo(this.widget.url);
     Storage.setInt("position", 0);
-    await download.execute(onProcessing: (int process){
-      processing = process;
-      if(process == 100) {
-        Storage.setString("url", this.widget.url);
-        Storage.setString("fileName", download.fileName);
-        Storage.setString("title", download.title);
-        Storage.setString("author", download.author);
-        Storage.setInt("duration", download.duration.inMilliseconds);
-      }
-      setState(() { });
-    });
+    try{
+      await download.execute(onProcessing: (int process){
+        processing = process;
+        if(process == 100) {
+          Storage.setString("url", this.widget.url);
+          Storage.setString("fileName", download.fileName);
+          Storage.setString("title", download.title);
+          Storage.setString("author", download.author);
+          Storage.setInt("duration", download.duration.inMilliseconds);
+        }
+        setState(() { });
+      });      
+    } catch(e) {
+      alert(context, e.toString());
+    }
   }
 
   @override
@@ -159,14 +167,27 @@ class _PlayerState extends State<Player> {
                 )
               ),
               if(download.streams != null && processing == -1)
-                stremsGridView(),
+                download.gridView(context, onReady: () {
+                  if(streamsTimes == 0) { // 在第一次自動觸發
+                    toast();
+                    streamsTimes = 1;
+                  }
+                }, onPress: (index) {
+                  choiceVideo(index);
+                }),
               if(processing == 100)
                 ElevatedButton(
                   child: Text('重新選擇'),
-                  onPressed: () {
+                  onPressed: () async {
+                    if(download.streams == null){
+                      download.title = "";
+                      streamsTimes = 1;
+                    }
                     processing = -1;
                     setState(() {});
                     player = null;
+                    if(download.streams == null)
+                      await getStream();
                   },
                 )
             ]
@@ -231,108 +252,15 @@ class _PlayerState extends State<Player> {
     );
   }
 
-  Widget stremsGridView(){
-    List arr = download.streams.toList();
-    double width = MediaQuery.of(context).size.width;
-    int w = width < 800 ? 150 : 180;
-    int cells = (width / w).ceil();
-    return Container(//容器内补白
-      decoration: BoxDecoration(
-        // border: Border.all(color: Colors.lightBlue)
-      ),
-      margin: EdgeInsets.only(top: 10.0, bottom: 10.0), 
-      // padding: EdgeInsets.all(0.0),
-      child:  GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cells, //每行三列
-            childAspectRatio: 1.0, //显示区域宽高相等
-            mainAxisSpacing: 5.0,
-            crossAxisSpacing: 5.0,
-        ),
-        itemCount: arr.length,
-        shrinkWrap: true,
-        scrollDirection: Axis.vertical,
-        itemBuilder: (context, index) {
-          String mb = "${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
-            quality = "${arr[index].videoQuality}".replaceAll("VideoQuality.", "");
-          Color bg = Colors.grey.shade200, color = Colors.black;
-          if(quality.indexOf("medium") == 0){
-            bg = Colors.green.shade500;
-            color = Colors.white;
-          } else if(quality.indexOf("high") == 0) {
-            bg = Colors.red.shade500; 
-            color = Colors.white;
-          }
-          double fontSize = width < 800 ? 16 : 24;
-          if(index == arr.length -1 && streamsTimes == 0) { // 在第一次自動觸發
-            toast();
-            streamsTimes++;
-          }
-          return Material(
-            child: InkWell(
-              onTap: () async {
-                choiceVideo(index);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  color: bg
-                  // gradient: LinearGradient(
-                  //   begin: Alignment.topRight,
-                  //   end: Alignment.bottomLeft,
-                  //   stops: [
-                  //     0.1,
-                  //     0.4,
-                  //     0.6,
-                  //     0.9,
-                  //   ],
-                  //   colors: [
-                  //     Colors.yellow,
-                  //     Colors.red,
-                  //     Colors.indigo,
-                  //     Colors.teal,
-                  //   ],
-                  // )
-                ),
-                padding: EdgeInsets.all(5),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text( mb,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: fontSize,
-                      ),
-                    ),
-                    Container(height: 5,),
-                    Text( quality,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: fontSize,
-                      ),
-                    ),
-                    Container(height: 5,),
-                    Text("${arr[index].container.name.toString()}",
-                      style: TextStyle(
-                        color: color,
-                        fontSize: fontSize,
-                      ),
-                    ),
-                  ],
-                )
-            )
-          )
-        ); 
-        }
-      )
-    );
-  }
-  void choiceVideo(index) async {
+ void choiceVideo(index) async {
     if(timer != null) timer.cancel();
+    Fluttertoast.cancel();
     download.audio = download.streams.elementAt(index);
-    await getVideo();
-  }
+    try {
+      await getVideo();
+    } catch(e) {
+    }
+   }
 
   toast(){
     timer = Timer(Duration(seconds: 5), () => choiceVideo(0));
