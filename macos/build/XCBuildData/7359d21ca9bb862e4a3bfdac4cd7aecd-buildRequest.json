@@ -1,0 +1,51 @@
+{
+  "buildCommand" : "prepareForIndexing",
+  "configuredTargets" : [
+    {
+      "guid" : "975bede4823357e270719ea18a55f4949d8b2146a8145768218b852a9444a007"
+    },
+    {
+      "guid" : "975bede4823357e270719ea18a55f494312b4bc59bbbe2c06c205bf4da6737f5"
+    },
+    {
+      "guid" : "975bede4823357e270719ea18a55f494975ca575d1289bef32c9cad79a370b1b"
+    },
+    {
+      "guid" : "975bede4823357e270719ea18a55f494dad84c4673e92de06a333f0c773ade6d"
+    },
+    {
+      "guid" : "975bede4823357e270719ea18a55f4945da4c327f0c04bebfe6436cb174c3194"
+    }
+  ],
+  "continueBuildingAfterErrors" : true,
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "",
+      "buildProductsPath" : "",
+      "derivedDataPath" : "/Users/jimc/Library/Developer/Xcode/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/jimc/Library/Developer/Xcode/DerivedData/Pods-ekhoamvlkycnmgdgxoaxykwoabrw/Index/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/jimc/Library/Developer/Xcode/DerivedData/Pods-ekhoamvlkycnmgdgxoaxykwoabrw/Index/PrecompiledHeaders",
+      "pchPath" : ""
+    },
+    "configurationName" : "Release",
+    "overrides" : {
+      "synthesized" : {
+        "table" : {
+          "ENABLE_PREVIEWS" : "NO"
+        }
+      }
+    }
+  },
+  "qos" : "default",
+  "schemeCommand" : "launch",
+  "shouldCollectMetrics" : false,
+  "showNonLoggedProgress" : true,
+  "useDryRun" : true,
+  "useImplicitDependencies" : false,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : false
+}
