@@ -29,10 +29,12 @@ class _PlayerState extends State<Player> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
     String url = await Storage.getString("url");
+    String fileName = await Storage.getString("fileName");
+    var file = File(fileName);
     // url = ""; // for test................
-    print("MyTube.Storage.url: $url");
+    print("MyTube.Storage.url: $url, filtName: $fileName");
     try{
-      if(url == this.widget.url) {
+      if(url == this.widget.url && file.existsSync()) {
         download.fileName = await Storage.getString("fileName");
         download.title = await Storage.getString("title");
         download.author = await Storage.getString("author");
@@ -63,7 +65,7 @@ class _PlayerState extends State<Player> {
   }
 
   Future<void> getStream() async {
-     await download.getVideo(this.widget.url);
+    await download.getVideo(this.widget.url);
     await download.getVideoStream();
     setState(() { });
   }
@@ -132,10 +134,6 @@ class _PlayerState extends State<Player> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               new CircularProgressIndicator(),
-              // new Padding(
-              //   padding: const EdgeInsets.only(top: 20.0),
-              //   child: "loading",
-              // ),
             ],
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mytube/download.dart';
 import 'dart:io';
+import 'package:mytube/system/system.dart';
 
 void fileSave(BuildContext context, String url) {
   showDialog(
@@ -26,7 +27,8 @@ class _PanelState extends State<Panel> {
   final TextEditingController textEditingControllerF = new TextEditingController();
   final TextEditingController textEditingControllerD = new TextEditingController();
   final scrollController = ScrollController();
-  bool isVideo = true;
+  bool isVideo = false;
+  var dialogContext;
 
   @override
   void initState() {
@@ -36,43 +38,49 @@ class _PanelState extends State<Panel> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-    path = await Download.folder();
+    if(path.length == 0){
+      path = await Download.folder();
 
-    try{
-      await download.getVideo(this.widget.url);
-      await download.getVideoStream();
-      textEditingControllerF.text = trimChar(download.title);
-      textEditingControllerD.text = trimChar(download.author);
-      // await download.execute(onProcessing: (int process){
-      //   processing = process;
-      //   setState(() { });
-      // });
-      // print("MyTube.player.download: ${download.fileName}");
-    } catch(e) {
-      print("MyTube.player: $e");
+      try{
+        loading(context, onReady: (_) {
+          dialogContext = _;
+        });
+        await download.getVideo(this.widget.url);
+        await download.getAudioStream();
+        textEditingControllerF.text = trimChar(download.title);
+        textEditingControllerD.text = trimChar(download.author);
+        // await download.execute(onProcessing: (int process){
+        //   processing = process;
+        //   setState(() { });
+        // });
+        // print("MyTube.player.download: ${download.fileName}");
+        Navigator.pop(dialogContext);
+      } catch(e) {
+        print("MyTube.player: $e");
+      }
+
+      if(Directory(path).existsSync()){
+        List f1 = Directory(path).listSync();
+        List f2 = [], d = []; 
+        for(int i = 0; i < f1.length; i++) {
+          if(f1[i] is File)
+            f2.add(f1[i]);
+          else 
+            d.add(f1[i]);
+        }
+
+        for(int i = 0; i < d.length; i++) {
+          files.add(d[i]);
+        }
+        for(int i = 0; i < f2.length; i++) {
+          files.add(f2[i]);
+        }
+      } else 
+        Directory(path).createSync();
+      setState(() { });
+      print("MyTube.title: ${textEditingControllerF.text}");
+      print("$files");
     }
-
-    if(Directory(path).existsSync()){
-      List f1 = Directory(path).listSync();
-      List f2 = [], d = []; 
-      for(int i = 0; i < f1.length; i++) {
-        if(f1[i] is File)
-          f2.add(f1[i]);
-        else 
-          d.add(f1[i]);
-      }
-
-      for(int i = 0; i < d.length; i++) {
-        files.add(d[i]);
-      }
-      for(int i = 0; i < f2.length; i++) {
-        files.add(f2[i]);
-      }
-    } else 
-      Directory(path).createSync();
-    setState(() { });
-    print("MyTube.title: ${textEditingControllerF.text}");
-    print("$files");
   }
 
   String trimChar(String s) {
@@ -115,15 +123,12 @@ class _PanelState extends State<Panel> {
         title: Text('另存新檔'),
       ),
       body:  processing > -1 
-        ? loading() 
-        : (download.title.length > 0 
-          ? body() 
-          : waiting()
-      ),
+        ? loadFile() 
+        :  body(), // (download.title.length > 0  ? body() : waiting() ),
       floatingActionButton: (processing == -1 && download.title.length > 0)
         ? FloatingActionButton(
           onPressed: () async {
-            await download.execute(isVideo: isVideo, folder: textEditingControllerD.text, fileName: textEditingControllerF.text, onProcessing: (int process){
+            await download.execute(folder: textEditingControllerD.text, fileName: textEditingControllerF.text, onProcessing: (int process){
               processing = process;
               setState(() { });
             });
@@ -135,36 +140,8 @@ class _PanelState extends State<Panel> {
 
   }
 
-  Widget loading(){ // 還沒寫
+  Widget loadFile(){ // 還沒寫
     return Container();
-  }
-
-  Widget waiting(){
-    return  Center( 
-      child: new SizedBox(
-        width: 250.0,
-        height: 120.0,
-        child: new Container(
-          decoration: ShapeDecoration(
-            color: Color(0xffffffff),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8.0)),
-            ),
-          ),
-          child: new Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              new CircularProgressIndicator(),
-              // new Padding(
-              //   padding: const EdgeInsets.only(top: 20.0),
-              //   child: "loading",
-              // ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget body(){
@@ -203,120 +180,58 @@ class _PanelState extends State<Panel> {
                 width: 80,
                 child: Transform.scale( scale: 1.4,
                   child: Switch(
-                    value: isVideo,         // 依 saving 決定 Switch 外觀狀態
+                    value: isVideo,
                     onChanged: (value) {
-                      setState(() {
-                        isVideo = !isVideo;  // 改變 saving
+                      isVideo = !isVideo;
+                      download.streams = null;
+                      setState(()  {
+                        loadStream();
                       });
                     })
                 )
               )
             ],
           ),
-          // Padding(padding: EdgeInsets.only(top: 10)),
-          Expanded( flex: 1,
-            child: ListView.builder(
-              controller: scrollController,
-              shrinkWrap: true,
-              itemCount: files.length,
-              itemBuilder: (BuildContext context, int index){ 
-                return Container(
-                  padding: EdgeInsets.only(top: 0.0),
-                  child: files[index] is File
-                    ? widgetFile((files[index] as File).path)
-                    : widgetDirectory((files[index] as Directory).path)
-                  ,
-                );
-              },
-            )
-          )
+          if(download.streams != null)
+            download.gridView(context, onReady: () {
+              
+            }, onPress: (index) {
+
+            }),
         ]
       )
     );
   }
-  Widget gridView(){
-    List arr = download.streams.toList();
-    double width = MediaQuery.of(context).size.width;
-    int cells = (width / 150).ceil();
-    print("MyTube.width: $width, cells: $cells");
-    return GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cells, //每行三列
-            childAspectRatio: 1.0, //显示区域宽高相等
-            mainAxisSpacing: 5.0,
-            crossAxisSpacing: 5.0,
-        ),
-        itemCount: arr.length,
-        itemBuilder: (context, index) {
-          return Material(
-          child:  InkWell(
-            onTap: () async {
-              download.audio = download.streams.elementAt(index);
-              await download.execute(onProcessing: (int process){
-                processing = process;
-                setState(() { });
-              });
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                // border: Border.all(color: Colors.red)
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  stops: [
-                    0.1,
-                    0.4,
-                    0.6,
-                    0.9,
-                  ],
-                  colors: [
-                    Colors.yellow,
-                    Colors.red,
-                    Colors.indigo,
-                    Colors.teal,
-                  ],
-                  // tileMode: TileMode.repeated, // repeats the gradient over the canvas
-                )
-              ),
-              padding: EdgeInsets.all(10),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text("${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
-                    style: TextStyle(
-                      // color: Colors.red,
-                      fontSize: 18,
-                    ),
-                  ),
-                  Container(height: 10,),
-                  Text("${arr[index].videoQuality}".replaceAll("VideoQuality.", ""),
-                    style: TextStyle(
-                      // color: Colors.red,
-                      fontSize: 18,
-                    ),
-                  ),
-                  Container(height: 10,),
-                  // Cell(
-                  //   Text("${arr[index].videoQualityLabel}",
-                  //     style: TextStyle(
-                  //       // color: Colors.red,
-                  //       fontSize: 20,
-                  //     ),
-                  //   )
-                  // ),
-                  Text("${arr[index].container.name.toString()}",
-                    style: TextStyle(
-                      // color: Colors.red,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              )
-            )
-          )
-        ); 
-        }
+
+  loadStream() async {
+    loading(context, onReady: (_) {
+        dialogContext = _;
+      });
+    if(isVideo == true)
+      await download.getVideoStream();
+    else 
+      await download.getAudioStream();
+    
+    setState(() {
+      Navigator.pop(dialogContext);
+    });
+  }
+  Widget fileList(){
+    return Expanded( flex: 1,
+      child: ListView.builder(
+        controller: scrollController,
+        shrinkWrap: true,
+        itemCount: files.length,
+        itemBuilder: (BuildContext context, int index){ 
+          return Container(
+            padding: EdgeInsets.only(top: 0.0),
+            child: files[index] is File
+              ? widgetFile((files[index] as File).path)
+              : widgetDirectory((files[index] as Directory).path)
+            ,
+          );
+        },
+      )
     );
   }
   

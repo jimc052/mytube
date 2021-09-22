@@ -74,7 +74,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         actions: [
           IconButton( // 另存新檔
             icon: Icon(
-              Icons.file_copy, // more_horiz
+              Icons.file_copy,
               color: Colors.white,
             ),
             onPressed: () {
@@ -97,6 +97,4 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
       )
     );
   }
-
-  
 }

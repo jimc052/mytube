@@ -8,21 +8,20 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 import 'package:mytube/youtube.dart';
 import 'package:mytube/system/system.dart';
-// import 'package:mytube/video/fileSave.dart';
+import 'package:mytube/video/fileSave.dart';
 
 void main() async {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'My Tube',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.orange,
+        primarySwatch: Colors.blue,
       ),
       home: MyHomePage(title: 'My Tube'),
     );
@@ -96,6 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void reassemble() async {
     super.reassemble();
+    // fileSave(context, url + "/watch?v=sTjJ1LlviKM");
   }
   @override
   dispose() {
@@ -146,8 +146,10 @@ class _MyHomePageState extends State<MyHomePage> {
               this.webViewController!.anchorClick("a.large-media-item-thumbnail-container");
             } else if(url.indexOf("playlist?list") > -1) {
               this.webViewController!.anchorClick("a.compact-media-item-image");
-            } else if(url.indexOf("#") > -1) {
-
+            } else if(url.indexOf("#") > -1){
+            } else if(url.indexOf("feed/library") > -1) {
+              this.webViewController!.readAnchor(false);
+              this.webViewController!.clearIntervalAD();
             } else if(url.indexOf("/watch?") > -1) {
               this.webViewController!.skipAD();
             } else {

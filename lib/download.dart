@@ -9,7 +9,7 @@ class Download {
   String title = "", author = "", fileName = "", path = "", url = "";
   Duration duration = Duration(seconds: 0);
   final yt = YoutubeExplode();
-  bool stop = false;
+  bool stop = false, isVideo = false;
   var audio = null, streams;
 
   static Future<String> folder() async {
@@ -35,24 +35,10 @@ class Download {
 
   Future<dynamic> getVideoStream() async {
     try {
+      isVideo = true;
       print("MyTube.url: $url");
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.muxed; // manifest.videoOnly;
-      
-      // List arr = streams.toList();
-      // for(int i = 0; i < arr.length; i++) {
-      //   print("MyTube.${i + 1}: ${arr[i].size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, " 
-      //     + "${arr[i].videoQualityLabel}, ${arr[i].videoQuality}, " 
-      //     + "videoCodec: ${arr[i].videoCodec}, audioCodec: ${arr[i].audioCodec}, " 
-      //     + arr[i].container.name.toString());
-      //   if(arr[i].videoQualityLabel == "360p") {
-      //     audio = arr[i];
-      //     break;
-      //   }
-      //   // streams.first.size.totalMegaBytes.toStringAsFixed(3);
-      // }
-      
-     
       return streams;
     } catch(e) {
       print(e);
@@ -62,6 +48,7 @@ class Download {
 
   Future<void> getAudioStream() async {
     try {
+      isVideo = false;
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.audioOnly;
       // audio = streams.last;
@@ -71,9 +58,19 @@ class Download {
     }
   }
 
-
   Widget gridView(BuildContext context, {Function(int)? onPress, Function()? onReady}){
     List arr = this.streams.toList();
+    if(isVideo == true && arr.length > 7) {
+      for(int i = arr.length -1; i >= 0; i--){
+        String quality =  "${arr[i].videoQuality}".replaceAll("VideoQuality.", "");
+        print("quality: $quality");
+        if(quality.indexOf("high") > -1)
+          break;
+        else
+          arr.removeLast();
+      }
+    }
+
     double width = MediaQuery.of(context).size.width;
     int w = width < 800 ? 150 : 180;
     int cells = (width / w).ceil();
@@ -86,7 +83,7 @@ class Download {
       child:  GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: cells, //每行三列
-            childAspectRatio: 1.0, //显示区域宽高相等
+            childAspectRatio: 1.2, //显示区域宽高相等
             mainAxisSpacing: 5.0,
             crossAxisSpacing: 5.0,
         ),
@@ -95,15 +92,18 @@ class Download {
         scrollDirection: Axis.vertical,
         itemBuilder: (context, index) {
           String mb = "${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
-            quality = "${arr[index].videoQuality}".replaceAll("VideoQuality.", "");
+            quality = isVideo == true ? "${arr[index].videoQuality}".replaceAll("VideoQuality.", "") : "";
           Color bg = Colors.grey.shade200, color = Colors.black;
-          if(quality.indexOf("medium") == 0){
-            bg = Colors.green.shade500;
-            color = Colors.white;
-          } else if(quality.indexOf("high") == 0) {
-            bg = Colors.red.shade500; 
-            color = Colors.white;
+          if(isVideo == true){
+            if(quality.indexOf("medium") == 0){
+              bg = Colors.green.shade500;
+              color = Colors.white;
+            } else if(quality.indexOf("high") == 0) {
+              bg = Colors.red.shade500; 
+              color = Colors.white;
+            }            
           }
+
           double fontSize = width < 800 ? 16 : 24;
           if(index == arr.length -1) { // 在第一次自動觸發
             onReady!();
@@ -130,13 +130,15 @@ class Download {
                         fontSize: fontSize,
                       ),
                     ),
-                    Container(height: 5,),
-                    Text( quality,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: fontSize,
+                    if(quality.length > 0)
+                      Container(height: 5),
+                    if(quality.length > 0)
+                      Text( quality,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: fontSize,
+                        ),
                       ),
-                    ),
                     Container(height: 5,),
                     Text("${arr[index].container.name.toString()}",
                       style: TextStyle(
@@ -158,7 +160,7 @@ class Download {
     yt.close();
   }
 
-  Future<void> execute({String fileName = "", String folder = "", bool isVideo = true, required Function(int) onProcessing}) async {
+  Future<void> execute({String fileName = "", String folder = "", required Function(int) onProcessing}) async {
     try {
       print("MyTube.audio: ${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, videoQualityLabel: ${audio.videoQualityLabel}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
       print("MyTube.container: " + audio.container.name.toString());
