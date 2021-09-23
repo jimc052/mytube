@@ -6,6 +6,8 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:mytube/system/system.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:connectivity/connectivity.dart';
+import 'package:mytube/video/fileSave.dart';
 
 class Player extends StatefulWidget {
   final String url;
@@ -38,6 +40,7 @@ class _PlayerState extends State<Player> {
         download.fileName = await Storage.getString("fileName");
         download.title = await Storage.getString("title");
         download.author = await Storage.getString("author");
+        download.mb = await Storage.getString("mb");
         download.duration = Duration(milliseconds: await Storage.getInt("duration"));
         processing = 100;
         setState(() { });
@@ -70,7 +73,6 @@ class _PlayerState extends State<Player> {
     setState(() { });
   }
   Future<void> getVideo() async {
-    // await download.getVideo(this.widget.url);
     Storage.setInt("position", 0);
     try{
       await download.execute(onProcessing: (int process){
@@ -80,6 +82,7 @@ class _PlayerState extends State<Player> {
           Storage.setString("fileName", download.fileName);
           Storage.setString("title", download.title);
           Storage.setString("author", download.author);
+          Storage.setString("mb", download.mb);
           Storage.setInt("duration", download.duration.inMilliseconds);
         }
         setState(() { });
@@ -173,21 +176,39 @@ class _PlayerState extends State<Player> {
                 }, onPress: (index) {
                   choiceVideo(index);
                 }),
+              
               if(processing == 100)
-                ElevatedButton(
-                  child: Text('重新選擇'),
-                  onPressed: () async {
-                    if(download.streams == null){
-                      download.title = "";
-                      streamsTimes = 1;
-                    }
-                    processing = -1;
-                    setState(() {});
-                    player = null;
-                    if(download.streams == null)
-                      await getStream();
-                  },
-                )
+                Row(children: [
+                  ElevatedButton(
+                    child: Text('重新選擇'),
+                    style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
+                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: 5))
+                    ),
+                    onPressed: () async {
+                      if(download.streams == null){
+                        download.title = "";
+                        streamsTimes = 1;
+                      }
+                      processing = -1;
+                      setState(() {});
+                      player = null;
+                      if(download.streams == null)
+                        await getStream();
+                    },
+                  ),
+                  Container(width: 5,),
+                  ElevatedButton(
+                    child: Text('另存新檔'),
+                    style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
+                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: 5))
+                    ),
+                    onPressed: () async {
+                      fileSave(context, isLocal: true); 
+                    },
+                  )
+                ]
+              ),
+              Container(height: 5,)
             ]
           )
         ),
@@ -202,6 +223,7 @@ class _PlayerState extends State<Player> {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(height: 5),
         Text(download.title,
           textAlign: TextAlign.left,
           style: new TextStyle(
@@ -218,13 +240,23 @@ class _PlayerState extends State<Player> {
             )
           ),
         if(download.duration.inSeconds > 0)
-          Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
-            textAlign: TextAlign.left,
-            style: new TextStyle(
-              // color: Colors.blue,
-              fontSize: fontSize - 2,
-            )
-          ),
+          Row(children: [
+            Text("時間：" + download.duration.toString().replaceAll(".000000", ""),
+              textAlign: TextAlign.left,
+              style: new TextStyle(
+                // color: Colors.blue,
+                fontSize: fontSize - 2,
+              )
+            ),
+            Expanded(flex: 1, child: Container()),
+            Text(download.mb,
+              textAlign: TextAlign.right,
+              style: new TextStyle(
+                // color: Colors.blue,
+                fontSize: fontSize - 2,
+              )
+            ),
+          ]),
         if(processing < 100 && processing > -1) // LinearProgressIndicator
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -260,10 +292,21 @@ class _PlayerState extends State<Player> {
     }
    }
 
-  toast(){
-    timer = Timer(Duration(seconds: 5), () => choiceVideo(0));
+  toast() async {
+    int index = 0, sec = 5;
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.mobile) {
+      // I am connected to a mobile network.
+    } else if (connectivityResult == ConnectivityResult.wifi) {
+      if(download.qualityMedium > -1) 
+        index = download.qualityMedium;
+      else if(download.qualityHigh > -1) 
+        index = download.qualityHigh;
+    }
+    timer = Timer(Duration(seconds: sec), () => choiceVideo(index));
+
     Fluttertoast.showToast(
-      msg: "5 秒後，自動選取第一個視頻!!",
+      msg: "$sec 秒後，自動選取第 ${index + 1} 個視頻!!",
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.BOTTOM,
       timeInSecForIosWeb: 1,

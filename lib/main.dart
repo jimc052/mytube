@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:io' show Platform;
 import 'package:mytube/home.dart';
 import 'package:mytube/mac.dart';
@@ -17,8 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: Platform.isAndroid ? Home() : Mac(),
-
+      home: Home() //Platform.isAndroid ? Home() : Mac(),
     );
   }
 }

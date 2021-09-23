@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 //https://pub.dev/packages/youtube_explode_dart
 
 class Download {
-  String title = "", author = "", fileName = "", path = "", url = "";
+  String title = "", author = "", fileName = "", path = "", url = "", mb = "";
+  int qualityHigh = -1, qualityLow = -1, qualityMedium = -1;
   Duration duration = Duration(seconds: 0);
   final yt = YoutubeExplode();
   bool stop = false, isVideo = false;
@@ -35,7 +36,7 @@ class Download {
 
   Future<dynamic> getVideoStream() async {
     try {
-      isVideo = true;
+      isVideo = true; mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1;
       print("MyTube.url: $url");
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.muxed; // manifest.videoOnly;
@@ -48,7 +49,7 @@ class Download {
 
   Future<void> getAudioStream() async {
     try {
-      isVideo = false;
+      isVideo = false;  mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1;
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.audioOnly;
       // audio = streams.last;
@@ -63,6 +64,7 @@ class Download {
     if(isVideo == true && arr.length > 7) {
       for(int i = arr.length -1; i >= 0; i--){
         String quality =  "${arr[i].videoQuality}".replaceAll("VideoQuality.", "");
+       
         print("quality: $quality");
         if(quality.indexOf("high") > -1)
           break;
@@ -70,6 +72,16 @@ class Download {
           arr.removeLast();
       }
     }
+
+    for(int i = 0; i < arr.length; i++){
+      String quality = isVideo == true ? "${arr[i].videoQuality}".replaceAll("VideoQuality.", "") : "";
+      if(quality.indexOf("medium") == 0 && qualityMedium == -1){
+        qualityMedium = i;
+      } else if(quality.indexOf("high") == 0 && qualityHigh == -1) {
+        qualityHigh = i;
+      }  
+    }
+
 
     double width = MediaQuery.of(context).size.width;
     int w = width < 800 ? 150 : 180;
@@ -101,7 +113,7 @@ class Download {
             } else if(quality.indexOf("high") == 0) {
               bg = Colors.red.shade500; 
               color = Colors.white;
-            }            
+            }  
           }
 
           double fontSize = width < 800 ? 16 : 24;
@@ -111,8 +123,9 @@ class Download {
           return Material(
             child: InkWell(
               onTap: () async {
-                onPress!(index);
-                // choiceVideo(index);
+                if(onPress is Function)
+                  onPress!(index);
+                onPress = null;
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -163,7 +176,8 @@ class Download {
   Future<void> execute({String fileName = "", String folder = "", required Function(int) onProcessing}) async {
     try {
       print("MyTube.audio: ${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, videoQualityLabel: ${audio.videoQualityLabel}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
-      print("MyTube.container: " + audio.container.name.toString());
+      // print("MyTube.container: " + audio.container.name.toString());
+      mb = "${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}";
 
       fileName = ((fileName.length == 0) ? 'youtube' : fileName) 
         + '.${audio.container.name.toString()}';

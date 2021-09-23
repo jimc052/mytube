@@ -72,15 +72,16 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         ),
         title: Text('MyTube'),
         actions: [
-          IconButton( // 另存新檔
-            icon: Icon(
-              Icons.file_copy,
-              color: Colors.white,
+          if(local == 1)
+            IconButton( // 另存新檔
+              icon: Icon(
+                Icons.file_copy,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                fileSave(context, url: this.widget.url); 
+              }
             ),
-            onPressed: () {
-              fileSave(context, this.widget.url); 
-            }
-          ),
         ],
       ),
       body: local == -1 ? null : (local == 1  

@@ -3,17 +3,18 @@ import 'package:mytube/download.dart';
 import 'dart:io';
 import 'package:mytube/system/system.dart';
 
-void fileSave(BuildContext context, String url) {
+void fileSave(BuildContext context, {String url = "", isLocal = false}) {
   showDialog(
     barrierDismissible: false,
     context: context, 
-    builder: (BuildContext context) => Panel(url: url),
+    builder: (BuildContext context) => Panel(url: url, isLocal: isLocal),
   );
 }
 
 class Panel extends StatefulWidget {
   String url;
-  Panel({Key? key, required this.url}) : super(key: key);
+  bool isLocal = false;
+  Panel({Key? key, this.url = "", isLocal = false}) : super(key: key);
 
   @override
   _PanelState createState() => _PanelState();
@@ -40,23 +41,26 @@ class _PanelState extends State<Panel> {
     super.didChangeDependencies();
     if(path.length == 0){
       path = await Download.folder();
+      if(this.widget.url.length > 0) {
+        try{
+          loading(context, onReady: (_) {
+            dialogContext = _;
+          });
+          await download.getVideo(this.widget.url);
+          await download.getAudioStream();
+          textEditingControllerF.text = trimChar(download.title);
+          textEditingControllerD.text = trimChar(download.author);
+          // await download.execute(onProcessing: (int process){
+          //   processing = process;
+          //   setState(() { });
+          // });
+          // print("MyTube.player.download: ${download.fileName}");
+          Navigator.pop(dialogContext);
+        } catch(e) {
+          print("MyTube.player: $e");
+        }
+      } else if(this.widget.isLocal == true) {
 
-      try{
-        loading(context, onReady: (_) {
-          dialogContext = _;
-        });
-        await download.getVideo(this.widget.url);
-        await download.getAudioStream();
-        textEditingControllerF.text = trimChar(download.title);
-        textEditingControllerD.text = trimChar(download.author);
-        // await download.execute(onProcessing: (int process){
-        //   processing = process;
-        //   setState(() { });
-        // });
-        // print("MyTube.player.download: ${download.fileName}");
-        Navigator.pop(dialogContext);
-      } catch(e) {
-        print("MyTube.player: $e");
       }
 
       if(Directory(path).existsSync()){
