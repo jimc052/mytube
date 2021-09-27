@@ -171,36 +171,37 @@ class _PanelState extends State<Panel> {
               hintText: '目錄名稱',
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Text(isVideo == true ? '視頻' : '音頻',
-                style: TextStyle(
-                  color: isVideo == true ? Colors.blue : Colors.grey[400],
-                  fontSize: 16,
+          if(this.widget.url.length > 0)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(isVideo == true ? '視頻' : '音頻',
+                  style: TextStyle(
+                    color: isVideo == true ? Colors.blue : Colors.grey[400],
+                    fontSize: 16,
+                  )
+                ),
+                Container(
+                  width: 80,
+                  child: Transform.scale( scale: 1.4,
+                    child: Switch(
+                      value: isVideo,
+                      onChanged: (value) {
+                        isVideo = !isVideo;
+                        download.streams = null;
+                        setState(()  {
+                          loadStream();
+                        });
+                      })
+                  )
                 )
-              ),
-              Container(
-                width: 80,
-                child: Transform.scale( scale: 1.4,
-                  child: Switch(
-                    value: isVideo,
-                    onChanged: (value) {
-                      isVideo = !isVideo;
-                      download.streams = null;
-                      setState(()  {
-                        loadStream();
-                      });
-                    })
-                )
-              )
-            ],
-          ),
-          if(download.streams != null)
+              ],
+            ),
+          if(this.widget.url.length == 0 || download.selected > -1)
+            fileList(),
+          if(download.streams != null && download.selected == -1)
             download.gridView(context, onReady: () {
-              
             }, onPress: (index) {
-
             }),
         ]
       )

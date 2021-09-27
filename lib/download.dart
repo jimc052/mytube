@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 class Download {
   String title = "", author = "", fileName = "", path = "", url = "", mb = "";
-  int qualityHigh = -1, qualityLow = -1, qualityMedium = -1;
+  int qualityHigh = -1, qualityLow = -1, qualityMedium = -1, selected = -1;
   Duration duration = Duration(seconds: 0);
   final yt = YoutubeExplode();
   bool stop = false, isVideo = false;
@@ -36,7 +36,7 @@ class Download {
 
   Future<dynamic> getVideoStream() async {
     try {
-      isVideo = true; mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1;
+      isVideo = true; mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1; selected = -1;
       print("MyTube.url: $url");
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.muxed; // manifest.videoOnly;
@@ -49,7 +49,7 @@ class Download {
 
   Future<void> getAudioStream() async {
     try {
-      isVideo = false;  mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1;
+      isVideo = false;  mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1; selected = -1;
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.audioOnly;
       // audio = streams.last;
@@ -123,9 +123,11 @@ class Download {
           return Material(
             child: InkWell(
               onTap: () async {
-                if(onPress is Function)
+                if(onPress is Function && selected == -1) {
+                  selected = index;
                   onPress!(index);
-                onPress = null;
+                }
+                // onPress = null;
               },
               child: Container(
                 decoration: BoxDecoration(

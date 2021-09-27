@@ -160,7 +160,7 @@ class _PlayerState extends State<Player> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded( flex: 1, 
-                child: Scrollbar( // 显示进度条
+                child: Scrollbar(
                   child: SingleChildScrollView(
                     // padding: EdgeInsets.all(16.0),
                     child: information()
@@ -292,7 +292,8 @@ class _PlayerState extends State<Player> {
     }
    }
 
-  toast() async {
+  toast() async { // 暫時 mark, 09-27
+    /*
     int index = 0, sec = 5;
     var connectivityResult = await (Connectivity().checkConnectivity());
     if (connectivityResult == ConnectivityResult.mobile) {
@@ -314,33 +315,10 @@ class _PlayerState extends State<Player> {
       textColor: Colors.white,
       fontSize: 16.0
     );
-  }
-}
-/*
-class Cell extends StatelessWidget {
-  Widget child;
-  int flex;
-  double width;
-  Cell(this.child, {this.flex = 0, this.width = 0});
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    Widget view;
 
-    if(width > 0) {
-      view = Container(
-        width: width,
-        child: child
-      );
-    } else if(flex > 0) {
-      view = Expanded(flex: flex, child: child);
-    } else {
-      view = child;
-    }
-    return view;
+  */
   }
 }
-*/
 
 class PlayerControler extends StatefulWidget {
   final String fileName;
@@ -475,6 +453,63 @@ class _PlayerControlerState extends State<PlayerControler> {
           ]
         ),
       ]),
+    );
+  }
+}
+
+class Grid extends StatefulWidget {
+  Function(String)? onReady;
+  Function(int)? onPress;
+  Grid({Key? key, this.onPress, this.onReady}) : super(key: key);
+
+  @override
+  _GridState createState() => _GridState();
+}
+
+class _GridState extends State<Grid> {
+  bool isVideo = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    
+  }
+  
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+         Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Text(isVideo == true ? '視頻' : '音頻',
+              style: TextStyle(
+                color: isVideo == true ? Colors.blue : Colors.grey[400],
+                fontSize: 16,
+              ) 
+            ),
+            Container(
+              width: 80,
+              child: Transform.scale( scale: 1.4,
+                child: Switch(
+                  value: isVideo,
+                  onChanged: (value) {
+                    isVideo = !isVideo;
+                    
+                  })
+              )
+            )
+          ],
+        ),
+        Container()
+      ] 
     );
   }
 }
