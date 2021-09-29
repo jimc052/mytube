@@ -9,6 +9,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:mytube/video/fileSave.dart';
 
+Download download = new Download();
+
 class Player extends StatefulWidget {
   final String url;
   Player({Key? key, required this.url}) : super(key: key);
@@ -19,12 +21,12 @@ class Player extends StatefulWidget {
 
 class _PlayerState extends State<Player> {
   int processing = -1, streamsTimes = 0;
-  Download download = new Download();
   var player, timer;
 
   @override
   void initState() {
     super.initState();
+    download = new Download();
   }
 
   @override
@@ -68,8 +70,8 @@ class _PlayerState extends State<Player> {
   }
 
   Future<void> getStream() async {
-    await download.getVideo(this.widget.url);
-    await download.getVideoStream();
+    await download.initial(this.widget.url);
+    // await download.getVideoStream();
     setState(() { });
   }
   Future<void> getVideo() async {
@@ -150,11 +152,7 @@ class _PlayerState extends State<Player> {
       widget.add(PlayerControler(fileName: download.fileName, controller: player,));
     widget.add(Expanded( flex: 1,
         child: Container(
-          //  margin: const EdgeInsets.all(15.0),
           padding: EdgeInsets.symmetric(horizontal: 8.0),
-          // decoration: BoxDecoration(
-          //   border: Border.all(color: Colors.blueAccent)
-          // ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,21 +160,23 @@ class _PlayerState extends State<Player> {
               Expanded( flex: 1, 
                 child: Scrollbar(
                   child: SingleChildScrollView(
-                    // padding: EdgeInsets.all(16.0),
                     child: information()
                   )
                 )
               ),
-              if(download.streams != null && processing == -1)
-                download.gridView(context, onReady: () {
+              if(processing == -1)
+                Grid(onReady: (result) {
+                  print("MyTube.onReady");
                   if(streamsTimes == 0) { // 在第一次自動觸發
-                    toast();
+                    if(result > 0) toast();
                     streamsTimes = 1;
                   }
                 }, onPress: (index) {
+                  print("MyTube.onPress: $index");
                   choiceVideo(index);
+                }, onChange: (){
+                  if(timer != null) timer.cancel();
                 }),
-              
               if(processing == 100)
                 Row(children: [
                   ElevatedButton(
@@ -282,7 +282,7 @@ class _PlayerState extends State<Player> {
     );
   }
 
- void choiceVideo(index) async {
+  void choiceVideo(index) async {
     if(timer != null) timer.cancel();
     Fluttertoast.cancel();
     download.audio = download.streams.elementAt(index);
@@ -293,12 +293,9 @@ class _PlayerState extends State<Player> {
    }
 
   toast() async { // 暫時 mark, 09-27
-    /*
     int index = 0, sec = 5;
     var connectivityResult = await (Connectivity().checkConnectivity());
-    if (connectivityResult == ConnectivityResult.mobile) {
-      // I am connected to a mobile network.
-    } else if (connectivityResult == ConnectivityResult.wifi) {
+    if (connectivityResult == ConnectivityResult.wifi) {
       if(download.qualityMedium > -1) 
         index = download.qualityMedium;
       else if(download.qualityHigh > -1) 
@@ -315,8 +312,6 @@ class _PlayerState extends State<Player> {
       textColor: Colors.white,
       fontSize: 16.0
     );
-
-  */
   }
 }
 
@@ -458,9 +453,10 @@ class _PlayerControlerState extends State<PlayerControler> {
 }
 
 class Grid extends StatefulWidget {
-  Function(String)? onReady;
+  Function(int)? onReady;
   Function(int)? onPress;
-  Grid({Key? key, this.onPress, this.onReady}) : super(key: key);
+  Function()? onChange;
+  Grid({Key? key, this.onPress, this.onReady, this.onChange}) : super(key: key);
 
   @override
   _GridState createState() => _GridState();
@@ -468,11 +464,56 @@ class Grid extends StatefulWidget {
 
 class _GridState extends State<Grid> {
   bool isVideo = false;
+  List arr = [];
   
   @override
   void initState() {
     super.initState();
-    
+    initial();
+  }
+
+  initial() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    isVideo = (connectivityResult == ConnectivityResult.wifi);
+    await getStream();
+  }
+
+  getStream() async {
+    var dialogContext;
+    loading(context, onReady: (_) {
+      dialogContext = _;
+    });
+    if (isVideo == false) {
+      await download.getAudioStream();
+    } else  {
+      await download.getVideoStream();
+    }
+
+    arr = download.streams.toList();
+    if(isVideo == true){
+      for(int i = 0; i < arr.length; i++){
+        String quality = "${arr[i].videoQuality}".replaceAll("VideoQuality.", "");
+        if(quality.indexOf("medium") == 0 &&  download.qualityMedium == -1){
+          download.qualityMedium = i;
+        } else if(quality.indexOf("high") == 0 &&  download.qualityHigh == -1) {
+          download.qualityHigh = i;
+          break;
+        }
+      }      
+    }
+
+    if(isVideo == true && arr.length > 7) {
+      for(int i = arr.length -1; i >= 0; i--){
+        String quality = "${arr[i].videoQuality}".replaceAll("VideoQuality.", "");
+        if(quality.indexOf("high") > -1)
+          break;
+        else
+          arr.removeLast();
+      }
+    }
+    this.setState(() {
+      Navigator.pop(dialogContext);
+    });
   }
   
   @override
@@ -481,18 +522,19 @@ class _GridState extends State<Grid> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)  {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-         Row(
+        grid(),
+        Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Text(isVideo == true ? '視頻' : '音頻',
               style: TextStyle(
                 color: isVideo == true ? Colors.blue : Colors.grey[400],
-                fontSize: 16,
+                fontSize: 20,
               ) 
             ),
             Container(
@@ -500,16 +542,108 @@ class _GridState extends State<Grid> {
               child: Transform.scale( scale: 1.4,
                 child: Switch(
                   value: isVideo,
-                  onChanged: (value) {
+                  onChanged: (value) async {
+                    this.widget.onChange!();
                     isVideo = !isVideo;
-                    
+                    arr = [];
+                    setState(() {
+                      getStream();
+                    });
                   })
               )
             )
           ],
         ),
-        Container()
       ] 
+    );
+  }
+
+  grid(){
+    double width = MediaQuery.of(context).size.width;
+    int w = width < 800 ? 150 : 180;
+    int cells = (width / w).ceil();
+    return Container(
+      decoration: BoxDecoration(
+        // border: Border.all(color: Colors.lightBlue)
+      ),
+      margin: EdgeInsets.only(top: 10.0, bottom: 10.0), 
+      // padding: EdgeInsets.all(0.0),
+      child:  GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cells, //每行三列
+            childAspectRatio: 1.2, //显示区域宽高相等
+            mainAxisSpacing: 5.0,
+            crossAxisSpacing: 5.0,
+        ),
+        itemCount: arr.length,
+        shrinkWrap: true,
+        scrollDirection: Axis.vertical,
+        itemBuilder: (context, index) {
+          String mb = "${arr[index].size.totalMegaBytes.toStringAsFixed(1) + 'MB'}",
+            quality = isVideo == true ? "${arr[index].videoQuality}".replaceAll("VideoQuality.", "") : "";
+          Color bg = Colors.grey.shade200, color = Colors.black;
+          if(isVideo == true){
+            if(quality.indexOf("medium") == 0){
+              bg = Colors.green.shade500;
+              color = Colors.white;
+            } else if(quality.indexOf("high") == 0) {
+              bg = Colors.red.shade500; 
+              color = Colors.white;
+            }  
+          }
+
+          double fontSize = width < 800 ? 16 : 24;
+          if(index == arr.length -1 && this.widget.onReady is Function) { // 在第一次自動觸發
+            this.widget.onReady!(arr.length);
+            this.widget.onReady = null;
+          }
+          return Material(
+            child: InkWell(
+              onTap: () async {
+                arr = [];
+                setState(() {
+                  this.widget.onPress!(index);
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  color: bg
+                ),
+                padding: EdgeInsets.all(5),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text( mb,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: fontSize,
+                      ),
+                    ),
+                    if(quality.length > 0)
+                      Container(height: 5),
+                    if(quality.length > 0)
+                      Text( quality,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: fontSize,
+                        ),
+                      ),
+                    Container(height: 5,),
+                    Text("${arr[index].container.name.toString()}",
+                      style: TextStyle(
+                        color: color,
+                        fontSize: fontSize,
+                      ),
+                    ),
+                  ],
+                )
+            )
+          )
+        ); 
+        }
+      )
     );
   }
 }

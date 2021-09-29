@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mytube/download.dart';
 import 'dart:io';
 import 'package:mytube/system/system.dart';
 
@@ -21,7 +20,6 @@ class Panel extends StatefulWidget {
 }
 
 class _PanelState extends State<Panel> {
-  Download download = new Download();
   int processing = -1;
   List files = [];
   String path = "";
@@ -40,50 +38,42 @@ class _PanelState extends State<Panel> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
     if(path.length == 0){
-      path = await Download.folder();
-      if(this.widget.url.length > 0) {
-        try{
-          loading(context, onReady: (_) {
-            dialogContext = _;
-          });
-          await download.getVideo(this.widget.url);
-          await download.getAudioStream();
-          textEditingControllerF.text = trimChar(download.title);
-          textEditingControllerD.text = trimChar(download.author);
-          // await download.execute(onProcessing: (int process){
-          //   processing = process;
-          //   setState(() { });
-          // });
-          // print("MyTube.player.download: ${download.fileName}");
-          Navigator.pop(dialogContext);
-        } catch(e) {
-          print("MyTube.player: $e");
-        }
-      } else if(this.widget.isLocal == true) {
+      // path = await Download.folder();
+      // if(this.widget.url.length > 0) {
+      //   try{
+      //     loading(context, onReady: (_) {
+      //       dialogContext = _;
+      //     });
+          
+      //     Navigator.pop(dialogContext);
+      //   } catch(e) {
+      //     print("MyTube.player: $e");
+      //   }
+      // } else if(this.widget.isLocal == true) {
 
-      }
+      // }
 
-      if(Directory(path).existsSync()){
-        List f1 = Directory(path).listSync();
-        List f2 = [], d = []; 
-        for(int i = 0; i < f1.length; i++) {
-          if(f1[i] is File)
-            f2.add(f1[i]);
-          else 
-            d.add(f1[i]);
-        }
+      // if(Directory(path).existsSync()){
+      //   List f1 = Directory(path).listSync();
+      //   List f2 = [], d = []; 
+      //   for(int i = 0; i < f1.length; i++) {
+      //     if(f1[i] is File)
+      //       f2.add(f1[i]);
+      //     else 
+      //       d.add(f1[i]);
+      //   }
 
-        for(int i = 0; i < d.length; i++) {
-          files.add(d[i]);
-        }
-        for(int i = 0; i < f2.length; i++) {
-          files.add(f2[i]);
-        }
-      } else 
-        Directory(path).createSync();
-      setState(() { });
-      print("MyTube.title: ${textEditingControllerF.text}");
-      print("$files");
+      //   for(int i = 0; i < d.length; i++) {
+      //     files.add(d[i]);
+      //   }
+      //   for(int i = 0; i < f2.length; i++) {
+      //     files.add(f2[i]);
+      //   }
+      // } else 
+      //   Directory(path).createSync();
+      // setState(() { });
+      // print("MyTube.title: ${textEditingControllerF.text}");
+      // print("$files");
     }
   }
 
@@ -128,14 +118,11 @@ class _PanelState extends State<Panel> {
       ),
       body:  processing > -1 
         ? loadFile() 
-        :  body(), // (download.title.length > 0  ? body() : waiting() ),
-      floatingActionButton: (processing == -1 && download.title.length > 0)
+        :  body(),
+      floatingActionButton: (processing == -1)
         ? FloatingActionButton(
           onPressed: () async {
-            await download.execute(folder: textEditingControllerD.text, fileName: textEditingControllerF.text, onProcessing: (int process){
-              processing = process;
-              setState(() { });
-            });
+            alert(context, "not yet....");
           },
           child:  Icon(Icons.save_sharp, size: 30, color: Colors.white,),
         )
@@ -171,56 +158,13 @@ class _PanelState extends State<Panel> {
               hintText: '目錄名稱',
             ),
           ),
-          if(this.widget.url.length > 0)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(isVideo == true ? '視頻' : '音頻',
-                  style: TextStyle(
-                    color: isVideo == true ? Colors.blue : Colors.grey[400],
-                    fontSize: 16,
-                  )
-                ),
-                Container(
-                  width: 80,
-                  child: Transform.scale( scale: 1.4,
-                    child: Switch(
-                      value: isVideo,
-                      onChanged: (value) {
-                        isVideo = !isVideo;
-                        download.streams = null;
-                        setState(()  {
-                          loadStream();
-                        });
-                      })
-                  )
-                )
-              ],
-            ),
-          if(this.widget.url.length == 0 || download.selected > -1)
+          if(this.widget.url.length == 0)
             fileList(),
-          if(download.streams != null && download.selected == -1)
-            download.gridView(context, onReady: () {
-            }, onPress: (index) {
-            }),
         ]
       )
     );
   }
 
-  loadStream() async {
-    loading(context, onReady: (_) {
-        dialogContext = _;
-      });
-    if(isVideo == true)
-      await download.getVideoStream();
-    else 
-      await download.getAudioStream();
-    
-    setState(() {
-      Navigator.pop(dialogContext);
-    });
-  }
   Widget fileList(){
     return Expanded( flex: 1,
       child: ListView.builder(
