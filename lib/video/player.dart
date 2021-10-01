@@ -36,7 +36,7 @@ class _PlayerState extends State<Player> {
     String fileName = await Storage.getString("fileName");
     var file = File(fileName);
     // url = ""; // for test................
-    print("MyTube.Storage.url: $url, filtName: $fileName");
+    // print("MyTube.Storage.url: $url, filtName: $fileName");
     try{
       if(url == this.widget.url && file.existsSync()) {
         download.fileName = await Storage.getString("fileName");
@@ -49,7 +49,6 @@ class _PlayerState extends State<Player> {
       } else {
         await getStream();
       }
-      print("MyTube.player.download: ${download.fileName}");
     } catch(e) {
       print("MyTube.player: $e");
       alert(context, e.toString());
@@ -66,7 +65,10 @@ class _PlayerState extends State<Player> {
   @override
   void reassemble() async {
     super.reassemble();
-    streamsTimes = 0;
+    // streamsTimes = 0;
+    // download.stop = true;
+    // Fluttertoast.cancel();
+    // processing = -1;
   }
 
   Future<void> getStream() async {
@@ -105,7 +107,7 @@ class _PlayerState extends State<Player> {
         padding: EdgeInsets.all(0.0), //容器内补白
         width: double.infinity,
         height: double.infinity,
-        child: download == null || download.title.length == 0 ? loading() : 
+        child: download == null || download.title.length == 0 ? circularProgressIndicator() : 
         (width < height  
           ? Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -122,7 +124,7 @@ class _PlayerState extends State<Player> {
     );
   }
 
-  Widget loading() {
+  Widget circularProgressIndicator() {
     return new Center( 
       child: new SizedBox(
         width: 250.0,
@@ -166,16 +168,15 @@ class _PlayerState extends State<Player> {
               ),
               if(processing == -1)
                 Grid(onReady: (result) {
-                  print("MyTube.onReady");
                   if(streamsTimes == 0) { // 在第一次自動觸發
                     if(result > 0) toast();
                     streamsTimes = 1;
                   }
                 }, onPress: (index) {
-                  print("MyTube.onPress: $index");
                   choiceVideo(index);
                 }, onChange: (){
                   if(timer != null) timer.cancel();
+                  Fluttertoast.cancel();
                 }),
               if(processing == 100)
                 Row(children: [
@@ -218,7 +219,8 @@ class _PlayerState extends State<Player> {
   }
 
   Widget information(){
-    double fontSize = 20 + (MediaQuery.of(context).size.width > 800 ? 4 : 0);
+    var width = MediaQuery.of(context).size.width;
+    double fontSize = 20 + (width > 800 ? 4 : 0);
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +259,9 @@ class _PlayerState extends State<Player> {
               )
             ),
           ]),
-        if(processing < 100 && processing > -1) // LinearProgressIndicator
+        if(width < 800)
+          Container(height: 20,),
+        if(processing < 100 && processing > -1) // 下載進度
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -304,7 +308,7 @@ class _PlayerState extends State<Player> {
     timer = Timer(Duration(seconds: sec), () => choiceVideo(index));
 
     Fluttertoast.showToast(
-      msg: "$sec 秒後，自動選取第 ${index + 1} 個視頻!!",
+      msg: "$sec 秒後，自動選取第 ${index + 1} 個選項!!",
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.BOTTOM,
       timeInSecForIosWeb: 1,
@@ -363,8 +367,6 @@ class _PlayerControlerState extends State<PlayerControler> {
         int position = await Storage.getInt("position");
         if(position > 0)
           _controller!.seekTo(Duration(seconds: position));
-        print("MyTube.position 1: $position");
-        
         _controller!.play();
       });
     });
@@ -376,6 +378,10 @@ class _PlayerControlerState extends State<PlayerControler> {
     });
   }
   
+  @override
+  void reassemble() async { // develope mode
+    super.reassemble();
+  }
   @override
   void dispose() {
     _controller!.pause();
@@ -415,20 +421,19 @@ class _PlayerControlerState extends State<PlayerControler> {
         ),
         Row(
           children: [      
+            Container(width: 5),
             Material(
               // color: Colors.red,
               child: Ink(
-                decoration: ShapeDecoration(
-                  // color: Colors.black,
-                  shape: CircleBorder(),
-                  // shape: Border.all(
-                  //   color: Colors.black,
-                  //   width: 0,
-                  // ) ,
-                ),
+                // decoration: BoxDecoration(
+                //   borderRadius: BorderRadius.circular(6),
+                //   border: Border.all(color: _controller!.value.isPlaying ? Colors.black : Colors.grey, width: 2),
+                //   // color: Colors.yellow,
+                // ),
                 child: IconButton(
                   icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow),
-                  // color: Colors.white,
+                  color: !_controller!.value.isPlaying ?  Colors.black : Colors.grey,
+                  iconSize: 20,
                   onPressed: () {
                     setState(() {
                       _controller!.value.isPlaying
@@ -436,13 +441,14 @@ class _PlayerControlerState extends State<PlayerControler> {
                           : _controller!.play();
                     });
                   },
-                ),
-              )
+                )
+              ),
             ),
+            Container(width: 10),
             Text('${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
               ,style: TextStyle(
               // color: Colors.red,
-              fontSize: 18,
+              fontSize: 20,
             ),),
             // if(_duration.inSeconds > 0)
           ]
@@ -465,23 +471,34 @@ class Grid extends StatefulWidget {
 class _GridState extends State<Grid> {
   bool isVideo = false;
   List arr = [];
+  var loadingContext;
   
   @override
   void initState() {
     super.initState();
-    initial();
+    Future.delayed(Duration(seconds: 1), () => initial());
   }
 
   initial() async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-    isVideo = (connectivityResult == ConnectivityResult.wifi);
+    var width = MediaQuery.of(context).size.width;
+    if(width > 800) {
+      var connectivityResult = await Connectivity().checkConnectivity();
+      isVideo = (connectivityResult == ConnectivityResult.wifi);
+    }
+    // isVideo = false; // test ........................
     await getStream();
   }
 
+  @override
+  void reassemble() async { // develope mode
+    super.reassemble();
+    // isVideo = false;
+    // await getStream();
+  }
+
   getStream() async {
-    var dialogContext;
     loading(context, onReady: (_) {
-      dialogContext = _;
+      loadingContext = _;
     });
     if (isVideo == false) {
       await download.getAudioStream();
@@ -499,7 +516,18 @@ class _GridState extends State<Grid> {
           download.qualityHigh = i;
           break;
         }
-      }      
+      }
+    } else if(arr.length > 0) {
+      var size = 0.0, index = 0;
+      for(int i = 0; i < arr.length; i++){
+        print("MyTube.audio $i: ${arr[i].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==");
+        if(arr[i].size.totalMegaBytes < size || i == 0) {
+          size = arr[i].size.totalMegaBytes;
+          index = i;
+      }
+      }
+      download.qualityMedium = index;
+      print("MyTube.audio $index: ${arr[index].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==========================");
     }
 
     if(isVideo == true && arr.length > 7) {
@@ -512,12 +540,16 @@ class _GridState extends State<Grid> {
       }
     }
     this.setState(() {
-      Navigator.pop(dialogContext);
+      if(loadingContext != null)
+        Navigator.pop(loadingContext);
+      loadingContext = null;
     });
   }
   
   @override
   void dispose() {
+    if(loadingContext != null)
+      Navigator.pop(loadingContext);
     super.dispose();
   }
 

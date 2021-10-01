@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mytube/download.dart';
 import 'dart:io';
 import 'package:mytube/system/system.dart';
 
@@ -20,9 +21,8 @@ class Panel extends StatefulWidget {
 }
 
 class _PanelState extends State<Panel> {
-  int processing = -1;
   List files = [];
-  String path = "";
+  String path = "", title = "", folder = "", fileName = "";
   final TextEditingController textEditingControllerF = new TextEditingController();
   final TextEditingController textEditingControllerD = new TextEditingController();
   final scrollController = ScrollController();
@@ -38,42 +38,39 @@ class _PanelState extends State<Panel> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
     if(path.length == 0){
-      // path = await Download.folder();
-      // if(this.widget.url.length > 0) {
-      //   try{
-      //     loading(context, onReady: (_) {
-      //       dialogContext = _;
-      //     });
-          
-      //     Navigator.pop(dialogContext);
-      //   } catch(e) {
-      //     print("MyTube.player: $e");
-      //   }
-      // } else if(this.widget.isLocal == true) {
+      path = await Download.folder();
+       fileName = await Storage.getString("fileName");
+       print(path);
+       print(fileName);
+       /*
+        download.title = await Storage.getString("title");
+        download.author = await Storage.getString("author");
+        download.mb = await Storage.getString("mb");
+        download.duration = Duration(milliseconds: await Storage.getInt("duration"));
+      */
 
-      // }
+      textEditingControllerF.text = title = trimChar(await Storage.getString("title"));
+      textEditingControllerD.text = folder = trimChar(await Storage.getString("author"));
+      if(Directory(path).existsSync()){
+        List f1 = Directory(path).listSync();
+        List f2 = [], d = []; 
+        for(int i = 0; i < f1.length; i++) {
+          if(f1[i] is File)
+            f2.add(f1[i]);
+          else 
+            d.add(f1[i]);
+        }
 
-      // if(Directory(path).existsSync()){
-      //   List f1 = Directory(path).listSync();
-      //   List f2 = [], d = []; 
-      //   for(int i = 0; i < f1.length; i++) {
-      //     if(f1[i] is File)
-      //       f2.add(f1[i]);
-      //     else 
-      //       d.add(f1[i]);
-      //   }
-
-      //   for(int i = 0; i < d.length; i++) {
-      //     files.add(d[i]);
-      //   }
-      //   for(int i = 0; i < f2.length; i++) {
-      //     files.add(f2[i]);
-      //   }
-      // } else 
-      //   Directory(path).createSync();
-      // setState(() { });
-      // print("MyTube.title: ${textEditingControllerF.text}");
-      // print("$files");
+        for(int i = 0; i < d.length; i++) {
+          files.add(d[i]);
+        }
+        for(int i = 0; i < f2.length; i++) {
+          files.add(f2[i]);
+        }
+      } else 
+        Directory(path).createSync();
+      setState(() { });
+      print("$files");
     }
   }
 
@@ -116,50 +113,80 @@ class _PanelState extends State<Panel> {
         ),
         title: Text('另存新檔'),
       ),
-      body:  processing > -1 
-        ? loadFile() 
-        :  body(),
-      floatingActionButton: (processing == -1)
-        ? FloatingActionButton(
-          onPressed: () async {
-            alert(context, "not yet....");
-          },
-          child:  Icon(Icons.save_sharp, size: 30, color: Colors.white,),
-        )
-        : Container() 
+      body: body(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          save();
+        },
+        child:  Icon(Icons.save_sharp, size: 30, color: Colors.white,),
+      )
     );
-
   }
 
-  Widget loadFile(){ // 還沒寫
-    return Container();
+  void save(){
+    if(textEditingControllerF.text.length == 0) {
+      alert(context, "請輸入檔案名稱");
+    } else if(textEditingControllerD.text.length == 0) {
+      alert(context, "請輸入目錄名稱");
+    } else {
+      String path2 = path + "/" + textEditingControllerD.text;
+      if(Directory(path2).existsSync() == false)
+        Directory(path2).createSync();
+      var file = File(fileName);
+      String ext = fileName.substring(fileName.indexOf(".", fileName.length - 7));
+      file.copySync(path2 + "/" + textEditingControllerF.text + ext);
+      alert(context, "存檔完成!!");
+      setState(() {});
+    }
   }
 
   Widget body(){
     return Container(
-      padding: EdgeInsets.all(10.0), //容器内补白
+      padding: EdgeInsets.all(10.0),
       child: Column(
         children:  [
-          TextField(
-            controller: textEditingControllerF,
-            onChanged: (text) {
-              // print('檔案名稱: $text');
-            },
-            decoration: new InputDecoration(
-              hintText: '檔案名稱',
+          Row(children: [
+            Flexible( child: TextField(
+                controller: textEditingControllerF,
+                onChanged: (text) {
+                  setState(() {});
+                },
+                decoration: new InputDecoration(
+                  hintText: '檔案名稱',
+                ),
+              ),
             ),
-          ),
-          TextField(
-            controller: textEditingControllerD,
-            onChanged: (text) {
-              // print('目錄名稱: $text');
-            },
-            decoration: new InputDecoration(
-              hintText: '目錄名稱',
+            Container(width: 15),
+            myButton(Icons.undo, 
+              onPress:(){
+                textEditingControllerF.text = title;
+                setState(() {});
+              }, 
+              disable: textEditingControllerF.text == title
+            )
+          ]),
+          Container(height: 5),
+          Row(children: [
+            Flexible(child: TextField(
+                controller: textEditingControllerD,
+                onChanged: (text) {
+                  setState(() {});
+                },
+                decoration: new InputDecoration(
+                  hintText: '目錄名稱',
+                ),
+              ),
             ),
-          ),
-          if(this.widget.url.length == 0)
-            fileList(),
+            Container(width: 15),
+            myButton(Icons.undo, 
+              onPress: (){
+                textEditingControllerD.text = folder;
+                setState(() {});
+              }, 
+              disable: textEditingControllerD.text == folder
+            )
+          ]),
+          fileList(),
         ]
       )
     );
@@ -232,6 +259,29 @@ class _PanelState extends State<Panel> {
           )
         )
       )
+    );
+  }
+
+  Widget myButton(IconData icon, {required Function() onPress, bool disable = false}){
+    return Material(
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: disable == false ? Colors.black : Colors.grey, width: 1),
+          // color: Colors.yellow,
+        ),
+        padding: const EdgeInsets.all(0.0),
+        child: IconButton(
+          padding: const EdgeInsets.all(0.0),
+          icon: Icon(icon),
+          color: disable == false ?  Colors.black : Colors.grey,
+          iconSize: 25,
+          onPressed: () {
+            if(disable == false)
+              onPress();
+          },
+        )
+      ),
     );
   }
 }
