@@ -21,12 +21,12 @@ class Panel extends StatefulWidget {
 }
 
 class _PanelState extends State<Panel> {
-  List files = [];
-  String path = "", title = "", folder = "", fileName = "";
+  
+  String path = "", title = "", _folder = "", fileName = "", activeFolder= "";
   final TextEditingController textEditingControllerF = new TextEditingController();
   final TextEditingController textEditingControllerD = new TextEditingController();
   final scrollController = ScrollController();
-  bool isVideo = false;
+  bool saved = false;
   var dialogContext;
 
   @override
@@ -39,9 +39,7 @@ class _PanelState extends State<Panel> {
     super.didChangeDependencies();
     if(path.length == 0){
       path = await Download.folder();
-       fileName = await Storage.getString("fileName");
-       print(path);
-       print(fileName);
+      fileName = await Storage.getString("fileName");
        /*
         download.title = await Storage.getString("title");
         download.author = await Storage.getString("author");
@@ -50,27 +48,9 @@ class _PanelState extends State<Panel> {
       */
 
       textEditingControllerF.text = title = trimChar(await Storage.getString("title"));
-      textEditingControllerD.text = folder = trimChar(await Storage.getString("author"));
-      if(Directory(path).existsSync()){
-        List f1 = Directory(path).listSync();
-        List f2 = [], d = []; 
-        for(int i = 0; i < f1.length; i++) {
-          if(f1[i] is File)
-            f2.add(f1[i]);
-          else 
-            d.add(f1[i]);
-        }
-
-        for(int i = 0; i < d.length; i++) {
-          files.add(d[i]);
-        }
-        for(int i = 0; i < f2.length; i++) {
-          files.add(f2[i]);
-        }
-      } else 
-        Directory(path).createSync();
-      setState(() { });
-      print("$files");
+      textEditingControllerD.text = _folder = trimChar(await Storage.getString("author"));
+      setState(() {
+      });
     }
   }
 
@@ -114,12 +94,14 @@ class _PanelState extends State<Panel> {
         title: Text('另存新檔'),
       ),
       body: body(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          save();
-        },
-        child:  Icon(Icons.save_sharp, size: 30, color: Colors.white,),
-      )
+      floatingActionButton: saved == false
+        ? FloatingActionButton(
+            onPressed: () async {
+              save();
+            },
+            child:  Icon(Icons.save_sharp, size: 30, color: Colors.white)
+        )
+        : Container() 
     );
   }
 
@@ -132,11 +114,19 @@ class _PanelState extends State<Panel> {
       String path2 = path + "/" + textEditingControllerD.text;
       if(Directory(path2).existsSync() == false)
         Directory(path2).createSync();
+
       var file = File(fileName);
       String ext = fileName.substring(fileName.indexOf(".", fileName.length - 7));
-      file.copySync(path2 + "/" + textEditingControllerF.text + ext);
-      alert(context, "存檔完成!!");
-      setState(() {});
+      String f2 = path2 + "/" + textEditingControllerF.text + ext;
+      var file2 = File(f2);
+      if(file2.existsSync() == false){
+        file.copySync(path2 + "/" + textEditingControllerF.text + ext);
+        alert(context, "存檔完成!!");
+        saved = true;
+        setState(() {});
+      } else {
+        alert(context, "檔案已存在!!");
+      }
     }
   }
 
@@ -145,54 +135,81 @@ class _PanelState extends State<Panel> {
       padding: EdgeInsets.all(10.0),
       child: Column(
         children:  [
-          Row(children: [
-            Flexible( child: TextField(
-                controller: textEditingControllerF,
-                onChanged: (text) {
-                  setState(() {});
-                },
-                decoration: new InputDecoration(
-                  hintText: '檔案名稱',
+          if(saved == false)
+            Row(children: [
+              Flexible( child: TextField(
+                  controller: textEditingControllerF,
+                  onChanged: (text) {
+                    setState(() {});
+                  },
+                  decoration: new InputDecoration(
+                    hintText: '檔案名稱',
+                  ),
                 ),
               ),
-            ),
-            Container(width: 15),
-            myButton(Icons.undo, 
-              onPress:(){
-                textEditingControllerF.text = title;
-                setState(() {});
-              }, 
-              disable: textEditingControllerF.text == title
-            )
-          ]),
-          Container(height: 5),
-          Row(children: [
-            Flexible(child: TextField(
-                controller: textEditingControllerD,
-                onChanged: (text) {
+              Container(width: 15),
+              myButton(Icons.undo, 
+                onPress:(){
+                  textEditingControllerF.text = title;
                   setState(() {});
-                },
-                decoration: new InputDecoration(
-                  hintText: '目錄名稱',
+                }, 
+                disable: textEditingControllerF.text == title
+              )
+            ]),
+          if(saved == false) 
+            Container(height: 5),
+          if(saved == false)
+            Row(children: [
+              Flexible(child: TextField(
+                  controller: textEditingControllerD,
+                  onChanged: (text) {
+                    setState(() {});
+                  },
+                  decoration: new InputDecoration(
+                    hintText: '目錄名稱',
+                  ),
                 ),
               ),
-            ),
-            Container(width: 15),
-            myButton(Icons.undo, 
-              onPress: (){
-                textEditingControllerD.text = folder;
-                setState(() {});
-              }, 
-              disable: textEditingControllerD.text == folder
-            )
-          ]),
-          fileList(),
+              Container(width: 15),
+              myButton(Icons.undo, 
+                onPress: (){
+                  textEditingControllerD.text = _folder;
+                  setState(() {});
+                }, 
+                disable: textEditingControllerD.text == _folder
+              )
+            ]),
+          if(path.length > 0)
+            fileList(path),
         ]
       )
     );
   }
 
-  Widget fileList(){
+  List readFiles(folder){
+    List files = [];
+    if(Directory(folder).existsSync()){
+      List f1 = Directory(folder).listSync();
+      List f2 = [], d = []; 
+      for(int i = 0; i < f1.length; i++) {
+        if(f1[i] is File)
+          f2.add(f1[i]);
+        else 
+          d.add(f1[i]);
+      }
+
+      for(int i = 0; i < d.length; i++) {
+        files.add(d[i]);
+      }
+      for(int i = 0; i < f2.length; i++) {
+        files.add(f2[i]);
+      }
+    } else 
+      Directory(folder).createSync();
+    return files;
+  }
+  Widget fileList(folder){
+    List files =  readFiles(folder);
     return Expanded( flex: 1,
       child: ListView.builder(
         controller: scrollController,
@@ -233,32 +250,34 @@ class _PanelState extends State<Panel> {
     );
   }
   Widget widgetDirectory(String name){
-    return Material(
-      child:  InkWell(
-        onTap: (){
-          textEditingControllerD.text = name.replaceAll(path + "/", "");
-        },
-        // splashColor: Colors.red,
-        child: Container(
-          padding: EdgeInsets.all(10),
-          child: Row(
-            children: [
-              Icon(
-                Icons.folder,
-                color: Colors.grey[500],
-                size: 20,
-              ),
-              Padding(padding: EdgeInsets.only(right: 5)),
-              Text(name.replaceAll(path + "/", ""),
-                style: TextStyle(
-                  // color: Colors.red,
-                  fontSize: 20,
+    return Column(children: [
+        Material(
+        child:  InkWell(
+          onTap: (){
+            textEditingControllerD.text = name.replaceAll(path + "/", "");
+          },
+          // splashColor: Colors.red,
+          child: Container(
+            padding: EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.folder,
+                  color: Colors.grey[500],
+                  size: 20,
                 ),
-              ),
-            ],
+                Padding(padding: EdgeInsets.only(right: 5)),
+                Text(name.replaceAll(path + "/", ""),
+                  style: TextStyle(
+                    // color: Colors.red,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            )
           )
         )
-      )
+      )]
     );
   }
 
