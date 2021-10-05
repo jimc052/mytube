@@ -425,22 +425,27 @@ class _PlayerControlerState extends State<PlayerControler> {
             Material(
               // color: Colors.red,
               child: Ink(
-                // decoration: BoxDecoration(
-                //   borderRadius: BorderRadius.circular(6),
-                //   border: Border.all(color: _controller!.value.isPlaying ? Colors.black : Colors.grey, width: 2),
-                //   // color: Colors.yellow,
-                // ),
-                child: IconButton(
-                  icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow),
-                  color: !_controller!.value.isPlaying ?  Colors.black : Colors.grey,
-                  iconSize: 20,
-                  onPressed: () {
-                    setState(() {
-                      _controller!.value.isPlaying
-                          ? _controller!.pause()
-                          : _controller!.play();
-                    });
-                  },
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: !_controller!.value.isPlaying ? Colors.black54 : Colors.grey.shade300, width: 2),
+                  // color: Colors.yellow,
+                ),
+                child:  Container(
+                  padding: const EdgeInsets.all(0.0),
+                  width: 40.0,
+                  height: 40.0,
+                  child: IconButton(
+                    icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow),
+                    color: !_controller!.value.isPlaying ?  Colors.black54 : Colors.grey.shade300,
+                    iconSize: 20,
+                    onPressed: () {
+                      setState(() {
+                        _controller!.value.isPlaying
+                            ? _controller!.pause()
+                            : _controller!.play();
+                      });
+                    },
+                  )
                 )
               ),
             ),
@@ -520,14 +525,14 @@ class _GridState extends State<Grid> {
     } else if(arr.length > 0) {
       var size = 0.0, index = 0;
       for(int i = 0; i < arr.length; i++){
-        print("MyTube.audio $i: ${arr[i].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==");
+        // print("MyTube.audio $i: ${arr[i].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==");
         if(arr[i].size.totalMegaBytes < size || i == 0) {
           size = arr[i].size.totalMegaBytes;
           index = i;
       }
       }
       download.qualityMedium = index;
-      print("MyTube.audio $index: ${arr[index].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==========================");
+      // print("MyTube.audio $index: ${arr[index].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==========================");
     }
 
     if(isVideo == true && arr.length > 7) {

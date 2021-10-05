@@ -8,7 +8,7 @@ import 'dart:io' show Platform;
 import 'package:mytube/youtube.dart';
 import 'package:mytube/system/system.dart';
 import 'package:mytube/video/fileSave.dart';
-
+import 'package:device_info/device_info.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -64,20 +64,25 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-
     String watchID = await Storage.getString("watchID");
-    // watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    if(androidInfo.model == "V2")
+      watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
     // watchID = "/watch?v=iP8SqetfseI"; // test, 如實記
     if(watchID.length > 0 && Platform.isAndroid){
       new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
         openVideo(watchID); // "/watch?v=sTjJ1LlviKM");
       });
     }
+    
   }
 
   @override
   void reassemble() async { // develope mode
     super.reassemble();
+
+    alert(context, "test");
     // fileSave(context, url + "/watch?v=sTjJ1LlviKM");
   }
   @override

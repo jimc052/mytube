@@ -64,8 +64,8 @@ class _PanelState extends State<Panel> {
       .replaceAll('>', '')
       .replaceAll('|', '');
 
-    if(s.length > 50)
-      s = s.substring(0, 50);
+    if(s.length > 30)
+      s = s.substring(0, 30);
     return s;
   }
   
@@ -180,7 +180,13 @@ class _PanelState extends State<Panel> {
               )
             ]),
           if(path.length > 0)
-            fileList(path),
+            Expanded( flex: 1, 
+              child: Scrollbar(
+                child: SingleChildScrollView(
+                  child: Container(margin: EdgeInsets.only(top: 15.0), child: fileList(path)),
+                )
+              )
+            ),
         ]
       )
     );
@@ -208,30 +214,23 @@ class _PanelState extends State<Panel> {
       Directory(folder).createSync();
     return files;
   }
+  
   Widget fileList(folder){
     List files =  readFiles(folder);
-    return Expanded( flex: 1,
-      child: ListView.builder(
-        controller: scrollController,
-        shrinkWrap: true,
-        itemCount: files.length,
-        itemBuilder: (BuildContext context, int index){ 
-          return Container(
-            padding: EdgeInsets.only(top: 0.0),
-            child: files[index] is File
-              ? widgetFile((files[index] as File).path)
-              : widgetDirectory((files[index] as Directory).path)
-            ,
-          );
-        },
-      )
+    return(
+      Column(children: [
+        for(var item in files)
+          item is File
+              ? widgetFile((item as File).path)
+              : widgetDirectory((item as Directory).path)
+      ])
     );
   }
   
   Widget widgetFile(String name){
     return Container(
       padding: EdgeInsets.all(10),
-      child:Row(
+      child: Row(
         children: [
           Icon(
             Icons.insert_drive_file,
@@ -239,68 +238,99 @@ class _PanelState extends State<Panel> {
             size: 20,
           ),
           Padding(padding: EdgeInsets.only(right: 5)),
-          Text(name.replaceAll(path + "/", ""),
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 20,
-            ),
-          ),
+          Flexible(child: Container(
+              padding: new EdgeInsets.only(right: 13.0),
+              child: Text(name.replaceAll(path + "/", ""),
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 20,
+                ),
+              )
+            )
+          )
         ],
       )
     );
   }
   Widget widgetDirectory(String name){
     return Column(children: [
+      Row(children: [
+        Material(
+          child:  InkWell(
+            child:Container(
+              padding: const EdgeInsets.all(0.0),
+              width: 40.0,
+              height: 40.0,
+              child: IconButton(
+                icon: Icon(activeFolder == name ? Icons.folder_open : Icons.folder), // folder
+                // color: !_controller!.value.isPlaying ?  Colors.black54 : Colors.grey.shade300,
+                iconSize: 25,
+                onPressed: () {
+                  activeFolder = name;
+                  setState(() { });
+                },
+              )
+            ),
+          )
+        ),
         Material(
         child:  InkWell(
           onTap: (){
             textEditingControllerD.text = name.replaceAll(path + "/", "");
+            setState(() { });
           },
           // splashColor: Colors.red,
           child: Container(
-            padding: EdgeInsets.all(10),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.folder,
-                  color: Colors.grey[500],
-                  size: 20,
-                ),
-                Padding(padding: EdgeInsets.only(right: 5)),
-                Text(name.replaceAll(path + "/", ""),
+            // padding: EdgeInsets.all(10),
+            child: Text(name.replaceAll(path + "/", ""),
                   style: TextStyle(
                     // color: Colors.red,
                     fontSize: 20,
                   ),
                 ),
-              ],
             )
           )
         )
-      )]
-    );
+      ]),
+      if(activeFolder == name)
+        Container(
+          child: fileList(name),
+          margin: EdgeInsets.only(left: 15.0),
+          // padding: EdgeInsets.all(3.0),
+          // decoration: BoxDecoration(
+          //   border: Border.all(color: Colors.blueAccent)
+          // ),
+          // height: 30
+        )
+    ]);
   }
-
+  
   Widget myButton(IconData icon, {required Function() onPress, bool disable = false}){
     return Material(
       child: Ink(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: disable == false ? Colors.black : Colors.grey, width: 1),
+          border: Border.all(color: disable == false ? Colors.black54 : Colors.grey.shade300, width: 1),
           // color: Colors.yellow,
         ),
         padding: const EdgeInsets.all(0.0),
-        child: IconButton(
+        child: Container(
           padding: const EdgeInsets.all(0.0),
-          icon: Icon(icon),
-          color: disable == false ?  Colors.black : Colors.grey,
-          iconSize: 25,
-          onPressed: () {
-            if(disable == false)
-              onPress();
-          },
-        )
-      ),
+          width: 40.0,
+          height: 40.0,
+          child: IconButton(
+            padding: const EdgeInsets.all(0.0),
+            icon: Icon(icon),
+            color: disable == false ?  Colors.black54 : Colors.grey.shade300,
+            iconSize: 25,
+            onPressed: () {
+              if(disable == false)
+                onPress();
+            },
+          )
+        ),
+      )
     );
   }
 }
