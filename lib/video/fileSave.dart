@@ -322,29 +322,18 @@ class _PanelState extends State<Panel> {
     return Column(children: [
       Row(children: [
         Material(
-          color: background,
+          color: Colors.transparent,
           elevation: 0,
           child:  InkWell(
-            
-            // decoration: BoxDecoration(
-            //   color: background,
-            // ),
+              
             child: Container(
               padding: const EdgeInsets.all(0.0),
               width: 40.0,
               height: 40.0,
-              // decoration: BoxDecoration(
+              decoration: BoxDecoration(
               //   color: background,
               //   border:  Border.all(width: 0, color: background),
-              //   // boxShadow: [
-              //   //   BoxShadow(
-              //   //     color: Colors.transparent,
-              //   //     offset: Offset(0, 0),
-              //   //     blurRadius: 0,
-              //   //   )
-              //   // ]
-              // ),
-              
+              ),
               child: IconButton(
                 icon: Icon(activeFolder == name ? Icons.folder_open : Icons.folder), // folder
                 color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
@@ -358,26 +347,27 @@ class _PanelState extends State<Panel> {
           )
         ),
         Material(
-        child:  InkWell(
-          onTap: (){
-            textEditingControllerD.text = name.replaceAll(path + "/", "");
-            setState(() { });
-          },
-          // splashColor: Colors.red,
-          child: Container(
-            // padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: background,
-              border: Border.all(width: 0, color: background)
-            ),
-            child: Text(name.replaceAll(path + "/", ""),
-                style: TextStyle(
-                  color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
-                  fontSize: 20,
-                ),
+          color: Colors.transparent,
+          child:  InkWell(
+            onTap: (){
+              textEditingControllerD.text = name.replaceAll(path + "/", "");
+              setState(() { });
+            },
+            // splashColor: Colors.red,
+            child: Container(
+              padding: EdgeInsets.only(top: 5, bottom: 5),
+              decoration: BoxDecoration(
+                // color: background,
+                // border: Border.all(width: 0, color: background)
               ),
+              child: Text(name.replaceAll(path + "/", ""),
+                  style: TextStyle(
+                    color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
+                    fontSize: 20,
+                  ),
+                ),
+              )
             )
-          )
         )
       ]),
       if(activeFolder == name)
@@ -395,26 +385,28 @@ class _PanelState extends State<Panel> {
   
   Widget myButton(IconData icon, {required Function() onPress, bool disable = false}){
     return Material(
+      color: Colors.transparent,
       child: Ink(
         // decoration: BoxDecoration(
-        //   borderRadius: BorderRadius.circular(6),
+        //   borderRadius: BorderRadius.circular(12),
         //   border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade300, width: 1),
-        //   color: background,
+        //   color: Colors.transparent,
         // ),
         padding: const EdgeInsets.all(0.0),
         child: Container(
           padding: const EdgeInsets.all(0.0),
+          margin: const EdgeInsets.only(left: 5.0),
           width: 40.0,
           height: 40.0,
           decoration: BoxDecoration(
-          //   borderRadius: BorderRadius.circular(6),
-          //   border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade300, width: 1),
-            color: background,
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade200, width: 1),
+            // color: background,
           ),
           child: IconButton(
             padding: const EdgeInsets.all(0.0),
             icon: Icon(icon),
-            color: disable == false ?  Colors.orange : Colors.grey.shade300,
+            color: disable == false ?  Colors.orange : Colors.grey.shade200,
             iconSize: 25,
             onPressed: () {
               if(disable == false)
