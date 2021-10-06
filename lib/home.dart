@@ -7,7 +7,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 import 'package:mytube/youtube.dart';
 import 'package:mytube/system/system.dart';
-import 'package:mytube/video/fileSave.dart';
 import 'package:device_info/device_info.dart';
 
 class Home extends StatefulWidget {
@@ -81,9 +80,6 @@ class _HomeState extends State<Home> {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
-
-    alert(context, "test");
-    // fileSave(context, url + "/watch?v=sTjJ1LlviKM");
   }
   @override
   dispose() {

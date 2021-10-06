@@ -149,6 +149,8 @@ class _PlayerState extends State<Player> {
   }
 
   List<Widget> show(){
+    double height = MediaQuery.of(context).size.height;
+
     List<Widget> widget = [];
     if(processing == 100)
       widget.add(PlayerControler(fileName: download.fileName, controller: player,));
@@ -183,7 +185,7 @@ class _PlayerState extends State<Player> {
                   ElevatedButton(
                     child: Text('重新選擇'),
                     style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
-                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: 5))
+                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: height > 800 ? 10 : 5))
                     ),
                     onPressed: () async {
                       if(download.streams == null){
@@ -201,10 +203,10 @@ class _PlayerState extends State<Player> {
                   ElevatedButton(
                     child: Text('另存新檔'),
                     style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
-                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: 5))
+                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical:  height > 800 ? 10 : 5))
                     ),
                     onPressed: () async {
-                      fileSave(context, isLocal: true); 
+                      fileSave(context); 
                     },
                   )
                 ]

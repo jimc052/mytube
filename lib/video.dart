@@ -5,7 +5,6 @@ import 'package:mytube/system/system.dart';
 import 'package:mytube/youtube.dart';
 import 'dart:ui'; 
 import 'dart:async';
-import 'package:mytube/video/fileSave.dart';
 
 class Video extends StatefulWidget {
   final String url;
@@ -72,16 +71,16 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         ),
         title: Text('MyTube'),
         actions: [
-          if(local == 1)
-            IconButton( // 另存新檔
-              icon: Icon(
-                Icons.file_copy,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                fileSave(context, url: this.widget.url); 
-              }
-            ),
+          // if(local == 1)
+          //   IconButton( // 另存新檔
+          //     icon: Icon(
+          //       Icons.file_copy,
+          //       color: Colors.white,
+          //     ),
+          //     onPressed: () {
+          //       fileSave(context, url: this.widget.url); 
+          //     }
+          //   ),
         ],
       ),
       body: local == -1 ? null : (local == 1  

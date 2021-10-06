@@ -3,11 +3,11 @@ import 'package:mytube/download.dart';
 import 'dart:io';
 import 'package:mytube/system/system.dart';
 
-void fileSave(BuildContext context, {String url = "", isLocal = false}) {
+void fileSave(BuildContext context) {
   showDialog(
     barrierDismissible: false,
     context: context, 
-    builder: (BuildContext context) => Panel(url: url, isLocal: isLocal),
+    builder: (BuildContext context) => Panel(),
   );
 }
 
@@ -21,13 +21,13 @@ class Panel extends StatefulWidget {
 }
 
 class _PanelState extends State<Panel> {
-  
   String path = "", title = "", _folder = "", fileName = "", activeFolder= "";
   final TextEditingController textEditingControllerF = new TextEditingController();
   final TextEditingController textEditingControllerD = new TextEditingController();
   final scrollController = ScrollController();
   bool saved = false;
   var dialogContext;
+  var background = Color.fromRGBO(38, 38, 38, 0.8);
 
   @override
   void initState() {
@@ -84,22 +84,29 @@ class _PanelState extends State<Panel> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.black,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_sharp,
-            color: Colors.white,
+            color: Colors.orange,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('另存新檔'),
+        title: Text('另存新檔',
+          style: TextStyle(
+            color: Colors.orange,
+            fontSize: 20,
+          )
+        ),
       ),
       body: body(),
       floatingActionButton: saved == false
         ? FloatingActionButton(
+            backgroundColor: Colors.black,
             onPressed: () async {
               save();
             },
-            child:  Icon(Icons.save_sharp, size: 30, color: Colors.white)
+            child:  Icon(Icons.save_sharp, size: 30, color: Colors.orange)
         )
         : Container() 
     );
@@ -133,21 +140,58 @@ class _PanelState extends State<Panel> {
   Widget body(){
     return Container(
       padding: EdgeInsets.all(10.0),
+      decoration: BoxDecoration(
+        color: background,
+      ),
       child: Column(
         children:  [
           if(saved == false)
             Row(children: [
-              Flexible( child: TextField(
+              Flexible(child: TextField(
+                  style: TextStyle(color: Colors.orange),
                   controller: textEditingControllerF,
                   onChanged: (text) {
                     setState(() {});
                   },
-                  decoration: new InputDecoration(
+                  decoration: InputDecoration(
                     hintText: '檔案名稱',
+                      // filled: true,
+                      // fillColor: Color(0xFFF2F2F2),
+                    // focusedBorder: OutlineInputBorder(
+                    //   borderSide:  BorderSide(color: Colors.orange),
+                    //   // borderRadius: new BorderRadius.circular(25.7),
+                    // ),
+                    // border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                      borderSide: BorderSide(width: 1, color: Colors.green)
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                      borderSide: BorderSide(width: 1, color: Colors.orange),
+                    ),
+                    // disabledBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
+                    //   borderSide: BorderSide(width: 1,color: Colors.orange),
+                    // ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                      borderSide: BorderSide(width: 1,color: Colors.grey.shade600),
+                    ),
+                    
+                    // errorBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
+                    //   borderSide: BorderSide(width: 1,color: Colors.black)
+                    // ),
+                    // focusedErrorBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
+                    //   borderSide: BorderSide(width: 1,color: Colors.yellowAccent)
+                    // ),
                   ),
                 ),
               ),
-              Container(width: 15),
+              // Container(width: 5),
               myButton(Icons.undo, 
                 onPress:(){
                   textEditingControllerF.text = title;
@@ -161,16 +205,34 @@ class _PanelState extends State<Panel> {
           if(saved == false)
             Row(children: [
               Flexible(child: TextField(
+                  style: TextStyle(color: Colors.orange),
                   controller: textEditingControllerD,
                   onChanged: (text) {
                     setState(() {});
                   },
                   decoration: new InputDecoration(
                     hintText: '目錄名稱',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                      borderSide: BorderSide(width: 1, color: Colors.green)
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                      borderSide: BorderSide(width: 1, color: Colors.orange),
+                    ),
+                    // disabledBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
+                    //   borderSide: BorderSide(width: 1,color: Colors.orange),
+                    // ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                      borderSide: BorderSide(width: 1, color: Colors.grey.shade600),
+                    ),
                   ),
                 ),
               ),
-              Container(width: 15),
+              // Container(width: 5),
               myButton(Icons.undo, 
                 onPress: (){
                   textEditingControllerD.text = _folder;
@@ -229,6 +291,9 @@ class _PanelState extends State<Panel> {
   
   Widget widgetFile(String name){
     return Container(
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+      ),
       padding: EdgeInsets.all(10),
       child: Row(
         children: [
@@ -257,14 +322,32 @@ class _PanelState extends State<Panel> {
     return Column(children: [
       Row(children: [
         Material(
+          color: background,
+          elevation: 0,
           child:  InkWell(
-            child:Container(
+            
+            // decoration: BoxDecoration(
+            //   color: background,
+            // ),
+            child: Container(
               padding: const EdgeInsets.all(0.0),
               width: 40.0,
               height: 40.0,
+              // decoration: BoxDecoration(
+              //   color: background,
+              //   border:  Border.all(width: 0, color: background),
+              //   // boxShadow: [
+              //   //   BoxShadow(
+              //   //     color: Colors.transparent,
+              //   //     offset: Offset(0, 0),
+              //   //     blurRadius: 0,
+              //   //   )
+              //   // ]
+              // ),
+              
               child: IconButton(
                 icon: Icon(activeFolder == name ? Icons.folder_open : Icons.folder), // folder
-                // color: !_controller!.value.isPlaying ?  Colors.black54 : Colors.grey.shade300,
+                color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
                 iconSize: 25,
                 onPressed: () {
                   activeFolder = name;
@@ -283,12 +366,16 @@ class _PanelState extends State<Panel> {
           // splashColor: Colors.red,
           child: Container(
             // padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: background,
+              border: Border.all(width: 0, color: background)
+            ),
             child: Text(name.replaceAll(path + "/", ""),
-                  style: TextStyle(
-                    // color: Colors.red,
-                    fontSize: 20,
-                  ),
+                style: TextStyle(
+                  color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
+                  fontSize: 20,
                 ),
+              ),
             )
           )
         )
@@ -309,20 +396,25 @@ class _PanelState extends State<Panel> {
   Widget myButton(IconData icon, {required Function() onPress, bool disable = false}){
     return Material(
       child: Ink(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: disable == false ? Colors.black54 : Colors.grey.shade300, width: 1),
-          // color: Colors.yellow,
-        ),
+        // decoration: BoxDecoration(
+        //   borderRadius: BorderRadius.circular(6),
+        //   border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade300, width: 1),
+        //   color: background,
+        // ),
         padding: const EdgeInsets.all(0.0),
         child: Container(
           padding: const EdgeInsets.all(0.0),
           width: 40.0,
           height: 40.0,
+          decoration: BoxDecoration(
+          //   borderRadius: BorderRadius.circular(6),
+          //   border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade300, width: 1),
+            color: background,
+          ),
           child: IconButton(
             padding: const EdgeInsets.all(0.0),
             icon: Icon(icon),
-            color: disable == false ?  Colors.black54 : Colors.grey.shade300,
+            color: disable == false ?  Colors.orange : Colors.grey.shade300,
             iconSize: 25,
             onPressed: () {
               if(disable == false)

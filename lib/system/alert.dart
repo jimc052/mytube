@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 void alert(BuildContext context, String msg, {List<Widget>? actions}) {
   print("MyTube.alert: $msg");
-  Widget objTitle =
+  Widget title =
     Container(child: 
       Row(children: <Widget>[
         // Icon(
@@ -13,7 +13,7 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
         // Padding(padding: EdgeInsets.only(right: 10)),
         Text("MyTube",
           style: TextStyle(
-            color: Colors.blue,
+            color: Colors.white,
             fontSize: 20,
           ),
         ),
@@ -22,10 +22,11 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
     margin: const EdgeInsets.only(bottom: 10.0),
     padding: const EdgeInsets.all(10.0),
     decoration: BoxDecoration(
-      border: Border(bottom: BorderSide( //                   <--- left side
-        color: Colors.grey.shade500,
-        width: 2.0,
-      ),)
+      color: Colors.blue,
+    //   border: Border(bottom: BorderSide( //                   <--- left side
+    //     color: Colors.grey.shade500,
+    //     width: 2.0,
+    //   ),)
     ),
   );
   if(actions == null) {
@@ -39,10 +40,10 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
           // style: TextStyle(color: Colors.black),
         ),
         style: ElevatedButton.styleFrom(
-          primary: Colors.purple,
+          primary: Colors.blue,
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
           textStyle: TextStyle(
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.bold
           )
         ),
@@ -50,7 +51,7 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
     ];
   }
   AlertDialog dialog = AlertDialog(
-    title: Text("MyTube"),
+    // title: Text("MyTube"),
     backgroundColor: Colors.white,
     contentPadding: EdgeInsets.zero,
     shape: RoundedRectangleBorder(
@@ -61,15 +62,23 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
         mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          objTitle,
-          Text(msg,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 20,
-            ),
-          ),
-      ],)
+          children: [
+            title,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, ),
+              child: Scrollbar(
+                child: SingleChildScrollView(
+                  child: Text(msg,
+                    style: TextStyle(
+                      // color: Colors.red,
+                      fontSize: 20,
+                    ),
+                  ),
+                )
+              )
+            )
+          ],
+        )
     ),
     actions: actions,
   );

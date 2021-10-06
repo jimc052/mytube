@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
 import 'package:mytube/home.dart';
-import 'package:mytube/mac.dart';
 
 void main() async {
   runApp(MyApp());
