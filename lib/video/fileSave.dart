@@ -84,7 +84,7 @@ class _PanelState extends State<Panel> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.black54,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_sharp,
@@ -102,7 +102,7 @@ class _PanelState extends State<Panel> {
       body: body(),
       floatingActionButton: saved == false
         ? FloatingActionButton(
-            backgroundColor: Colors.black,
+            backgroundColor: Colors.black87,
             onPressed: () async {
               save();
             },
@@ -155,13 +155,6 @@ class _PanelState extends State<Panel> {
                   },
                   decoration: InputDecoration(
                     hintText: '檔案名稱',
-                      // filled: true,
-                      // fillColor: Color(0xFFF2F2F2),
-                    // focusedBorder: OutlineInputBorder(
-                    //   borderSide:  BorderSide(color: Colors.orange),
-                    //   // borderRadius: new BorderRadius.circular(25.7),
-                    // ),
-                    // border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(horizontal: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(4)),
@@ -171,23 +164,10 @@ class _PanelState extends State<Panel> {
                       borderRadius: BorderRadius.all(Radius.circular(4)),
                       borderSide: BorderSide(width: 1, color: Colors.orange),
                     ),
-                    // disabledBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
-                    //   borderSide: BorderSide(width: 1,color: Colors.orange),
-                    // ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(4)),
                       borderSide: BorderSide(width: 1,color: Colors.grey.shade600),
                     ),
-                    
-                    // errorBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
-                    //   borderSide: BorderSide(width: 1,color: Colors.black)
-                    // ),
-                    // focusedErrorBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
-                    //   borderSide: BorderSide(width: 1,color: Colors.yellowAccent)
-                    // ),
                   ),
                 ),
               ),
@@ -221,10 +201,6 @@ class _PanelState extends State<Panel> {
                       borderRadius: BorderRadius.all(Radius.circular(4)),
                       borderSide: BorderSide(width: 1, color: Colors.orange),
                     ),
-                    // disabledBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.all(Radius.circular(4)),
-                    //   borderSide: BorderSide(width: 1,color: Colors.orange),
-                    // ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(4)),
                       borderSide: BorderSide(width: 1, color: Colors.grey.shade600),
@@ -318,59 +294,42 @@ class _PanelState extends State<Panel> {
       )
     );
   }
+  
   Widget widgetDirectory(String name){
     return Column(children: [
-      Row(children: [
-        Material(
-          color: Colors.transparent,
-          elevation: 0,
-          child:  InkWell(
-              
-            child: Container(
-              padding: const EdgeInsets.all(0.0),
-              width: 40.0,
-              height: 40.0,
-              decoration: BoxDecoration(
-              //   color: background,
-              //   border:  Border.all(width: 0, color: background),
-              ),
-              child: IconButton(
-                icon: Icon(activeFolder == name ? Icons.folder_open : Icons.folder), // folder
+      Material(
+      color: Colors.transparent,
+      child:  InkWell(
+        onTap: (){
+          if(activeFolder != name){
+            activeFolder = name;
+            textEditingControllerD.text = name.replaceAll(path + "/", "");
+          } else 
+            activeFolder = "";
+          setState(() { });
+        },
+        // splashColor: Colors.red,
+        child: Container(
+          padding: EdgeInsets.all(10),
+          child: Row(
+            children: [
+              Icon(activeFolder == name ? Icons.folder_open : Icons.folder,
                 color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
-                iconSize: 25,
-                onPressed: () {
-                  activeFolder = name;
-                  setState(() { });
-                },
-              )
-            ),
-          )
-        ),
-        Material(
-          color: Colors.transparent,
-          child:  InkWell(
-            onTap: (){
-              textEditingControllerD.text = name.replaceAll(path + "/", "");
-              setState(() { });
-            },
-            // splashColor: Colors.red,
-            child: Container(
-              padding: EdgeInsets.only(top: 5, bottom: 5),
-              decoration: BoxDecoration(
-                // color: background,
-                // border: Border.all(width: 0, color: background)
+                size: 20
               ),
-              child: Text(name.replaceAll(path + "/", ""),
-                  style: TextStyle(
-                    color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
-                    fontSize: 20,
-                  ),
+              Padding(padding: EdgeInsets.only(right: 5)),
+              Text(name.replaceAll(path + "/", ""),
+                style: TextStyle(
+                  color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
+                  fontSize: 20,
                 ),
               )
-            )
+            ],
+          )
         )
-      ]),
-      if(activeFolder == name)
+      )
+    ),
+    if(activeFolder == name)
         Container(
           child: fileList(name),
           margin: EdgeInsets.only(left: 15.0),
@@ -382,31 +341,26 @@ class _PanelState extends State<Panel> {
         )
     ]);
   }
-  
+
   Widget myButton(IconData icon, {required Function() onPress, bool disable = false}){
     return Material(
       color: Colors.transparent,
       child: Ink(
-        // decoration: BoxDecoration(
-        //   borderRadius: BorderRadius.circular(12),
-        //   border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade300, width: 1),
-        //   color: Colors.transparent,
-        // ),
         padding: const EdgeInsets.all(0.0),
         child: Container(
           padding: const EdgeInsets.all(0.0),
-          margin: const EdgeInsets.only(left: 5.0),
+          // margin: const EdgeInsets.only(left: 5.0),
           width: 40.0,
           height: 40.0,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade200, width: 1),
+            // borderRadius: BorderRadius.circular(5),
+            // border: Border.all(color: disable == false ? Colors.orange : Colors.grey.shade600, width: 1),
             // color: background,
           ),
           child: IconButton(
             padding: const EdgeInsets.all(0.0),
             icon: Icon(icon),
-            color: disable == false ?  Colors.orange : Colors.grey.shade200,
+            color: disable == false ?  Colors.orange : Colors.grey.shade600,
             iconSize: 25,
             onPressed: () {
               if(disable == false)
