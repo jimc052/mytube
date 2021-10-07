@@ -48,5 +48,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <receiver android:name=".MainActivity$NotificationReturnSlot">
+            <intent-filter>
+                <action android:name="action.SELECT" />
+                <action android:name="action.NEXT" />
+                <action android:name="action.PREV" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
