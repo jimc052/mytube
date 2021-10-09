@@ -8,6 +8,7 @@ import 'package:mytube/system/system.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:mytube/video/fileSave.dart';
+import 'package:flutter/services.dart';
 
 Download download = new Download();
 
@@ -22,7 +23,7 @@ class Player extends StatefulWidget {
 class _PlayerState extends State<Player> {
   int processing = -1, streamsTimes = 0;
   var player, timer;
-
+  
   @override
   void initState() {
     super.initState();
@@ -336,6 +337,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   VideoPlayerController? _controller;
   Duration _duration = Duration(seconds: 0);
   Duration _position = Duration(seconds: 0);
+  final methodChannel = const MethodChannel('com.flutter/MethodChannel');
 
   @override
   void initState() {
@@ -345,37 +347,60 @@ class _PlayerControlerState extends State<PlayerControler> {
     .file(File("file://" + widget.fileName))
     ..addListener(() {
       Timer.run( () {
-        this.setState((){
+        if(_controller!.value.isPlaying == true){
           _position = _controller!.value.position;
-          if(_position.inSeconds == _duration.inSeconds) {
-            Storage.setInt("position", 0);
-          } else if(_position.inSeconds > 0 && _position.inSeconds % 10 == 0) {
-            Storage.setInt("position", _position.inSeconds);
-          }
-        });
+          this.setState((){
+            if(_position.inSeconds > 0 && _duration.inMilliseconds - _position.inMilliseconds <= 600) {
+              stop();
+              setState(() { });
+            } else if(_position.inSeconds > 1 && _position.inSeconds % 10 == 0) {
+              if(_controller!.value.isPlaying == false) {
+                stop();
+                setState(() { });
+              }
+              Storage.setInt("position", _position.inSeconds);
+              methodChannel.invokeMethod('play', {
+                "title": download.title,
+                "author": download.author,
+                "position": '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
+              });
+              
+            }
+          });
+        }
       });
       if(_controller != null){
         try{
           setState(() {
             _duration = _controller!.value.duration;
+            // _controller!.value.
           });           
         } catch(e){
+
         }
       }
     })
     ..initialize().then((_) {
       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
-      setState(() async  {
+      setState(() async {
         int position = await Storage.getInt("position");
         if(position > 0)
           _controller!.seekTo(Duration(seconds: position));
-        _controller!.play();
+        play();
       });
     });
 
     eventChannel.receiveBroadcastStream().listen((data) async {
-      if(data == "unplugged" && _controller != null) {
-        _controller!.pause();
+      print("MyTube.event: " + data);
+      if(_controller != null) {
+        if((data == "unplugged" || data == "action.TOGGLE") && _controller!.value.isPlaying == true) {
+          pause();
+        } else if(data == "action.TOGGLE" && _controller!.value.isPlaying == false) {
+          play();
+        } else if(data == "action.STOP"){
+          stop();
+          this.setState((){});
+        }
       }
     });
   }
@@ -383,19 +408,48 @@ class _PlayerControlerState extends State<PlayerControler> {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
+    _controller!.seekTo(Duration(seconds: 1900));
+    print("MyTube.player.reassemble: ${_position.inSeconds} / ${_duration.inSeconds}");
+    play();
   }
   @override
   void dispose() {
-    _controller!.pause();
+    stop();
     _controller!.dispose();
     _controller = null;
     super.dispose();
+  }
+
+  play() async {
+    _controller!.play();
+    await methodChannel.invokeMethod('play', {
+      "title": download.title,
+      "author": download.author,
+      "position": ""
+    });
+  }
+  pause() async {
+    _controller!.pause();
+    await methodChannel.invokeMethod('pause', {
+      "title": download.title,
+      "author": download.author,
+    });
+  }
+  stop() async {
+    print("MyTube.player.stop()");
+    _controller!.pause();
+    _controller!.seekTo(Duration(seconds: 0));
+    Storage.setInt("position", 0);
+    _position = Duration(seconds: 0);
+    
+    await methodChannel.invokeMethod('stop');
   }
 
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+    double aspectRatio = download.isVideo == false && width < height ? 4.0 : _controller!.value.aspectRatio;
     
     return Container(
       width: (width < height ? width : (((height - 160) * _controller!.value.aspectRatio).roundToDouble())),
@@ -406,7 +460,7 @@ class _PlayerControlerState extends State<PlayerControler> {
       child: Column(children: [
         Container(
           child: _controller!.value.isInitialized
-          ? AspectRatio(aspectRatio: _controller!.value.aspectRatio, child: VideoPlayer(_controller!))
+          ? AspectRatio(aspectRatio: aspectRatio, child: VideoPlayer(_controller!))
           : Container(),
         ),
         Slider(
@@ -443,8 +497,8 @@ class _PlayerControlerState extends State<PlayerControler> {
                     onPressed: () {
                       setState(() {
                         _controller!.value.isPlaying
-                            ? _controller!.pause()
-                            : _controller!.play();
+                            ? pause()
+                            : play();
                       });
                     },
                   )

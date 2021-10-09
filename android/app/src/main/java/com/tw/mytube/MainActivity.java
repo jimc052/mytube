@@ -8,8 +8,17 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
+
+import android.view.View;
+import android.widget.RemoteViews;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,6 +26,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import androidx.annotation.NonNull;
+
+import androidx.core.app.NotificationCompat;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.BasicMessageChannel;
@@ -30,7 +41,18 @@ public class MainActivity extends FlutterActivity {
   public static String TAG = "MyTube";
   public static EventChannel.EventSink eventSink;
   HeadsetReceiver headsetReceiver;
+  String mode = "close", title = "", author = "", position = "";
 
+  // public static final String ACTION_PLAY = "action.PLAY";
+  public static final String ACTION_TOGGLE = "action.TOGGLE";
+  public static final String ACTION_STOP = "action.STOP";
+  public static final String ACTION_SELECT = "action.SELECT";
+  public static final String ACTION_NEXT = "action.NEXT";
+  public static final String ACTION_PREV = "action.PREV";
+  private static final String CHANNEL = "media_notification";
+  public static NotificationManager mNM;
+  String path = "";
+  MethodChannel.Result _result;
 
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -40,6 +62,7 @@ public class MainActivity extends FlutterActivity {
             flutterEngine.getDartExecutor(),
             "com.flutter/MethodChannel")
             .setMethodCallHandler(mMethodHandle);
+
     new EventChannel(flutterEngine.getDartExecutor(),
             "com.flutter/EventChannel")
             .setStreamHandler(mEnventHandle);
@@ -47,16 +70,24 @@ public class MainActivity extends FlutterActivity {
     IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
     headsetReceiver = new HeadsetReceiver();
     registerReceiver(headsetReceiver, filter);
-
+    mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+    createNotificationChannel();
   }
   MethodChannel.MethodCallHandler mMethodHandle = new MethodChannel.MethodCallHandler() {
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-      //  Log.i(TAG, "method: " + call.method);
-//      _result = result;
-      if(call.method.equals("execCmd")) { //
-        MainActivity.execCmd(call.argument("cmd"));
-        result.success("OK"); // call.argument("path")));
+      if(call.method.equals("play")) {
+        mode = "play";
+        title = call.argument("title");
+        author = call.argument("author");
+        position = call.argument("position");
+        showNotification();
+      } else if(call.method.equals("pause")) {
+        mode = "pause";
+        showNotification();
+      } else if(call.method.equals("stop")) {
+        mode = "stop";
+        mNM.cancel(1);
       } else if(call.method.equals("finish")) { // 結束程式
         Log.i(TAG, "method: " + call.method);
         result.success("OK"); // call.argument("path")));
@@ -124,31 +155,91 @@ public class MainActivity extends FlutterActivity {
     super.onStop();
     if(MainActivity.eventSink != null)
       MainActivity.eventSink.success("onStop");
+    mNM.cancel(1);
   }
   @Override
   protected void onDestroy() {
     super.onDestroy();
     unregisterReceiver(headsetReceiver);
+	  mNM.cancel(1);
 //    MainActivity.eventSink.success("onDestroy");
   }
-
-
-  public static boolean execCmd(String cmd) { // 不用了，直接用 js
-    Log.i(TAG, "execCmd..........." + cmd);
-    try{
-      Process p = Runtime.getRuntime().exec("sh");  //su為root使用者,sh普通使用者
-      OutputStream outputStream = p.getOutputStream();
-      DataOutputStream dataOutputStream=new DataOutputStream(outputStream);
-      dataOutputStream.writeBytes(cmd);
-      dataOutputStream.flush();
-      dataOutputStream.close();
-      outputStream.close();
-      return true;
+  private void createNotificationChannel() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      int importance = NotificationManager.IMPORTANCE_LOW;
+      NotificationChannel channel = new NotificationChannel(CHANNEL, CHANNEL, importance);
+      mNM.createNotificationChannel(channel);
     }
-    catch(Throwable t) {
-      t.printStackTrace();
-      Log.i(TAG, "execCmd: " + t.getMessage());
+  }
+  private void showNotification() {
+    NotificationCompat.Builder nBuilder = new NotificationCompat.Builder(this, CHANNEL)
+      .setSmallIcon(R.drawable.ic_stat_music_note)
+      .setPriority(Notification.PRIORITY_DEFAULT)
+      .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+      .setOnlyAlertOnce(true)
+      .setVibrate(new long[]{0L})
+      .setSound(null);
+    RemoteViews remoteView = new RemoteViews(this.getPackageName(), R.layout.notificationlayout);
+
+    remoteView.setTextViewText(R.id.title, title);
+    remoteView.setTextViewText(R.id.author, author); 
+    remoteView.setTextViewText(R.id.index, position); 
+    remoteView.setViewVisibility(R.id.prev, View.GONE); // // View.VISIBLE
+    remoteView.setViewVisibility(R.id.next, View.GONE);
+
+    String icon = mode.equals("play") ? "baseline_pause_black_48" : "baseline_play_arrow_black_48";
+    remoteView.setImageViewResource(R.id.toggle, getResources()
+      .getIdentifier(icon,"drawable", this.getPackageName()));
+
+    setNotificationListeners(remoteView);
+    nBuilder.setContent(remoteView);
+
+    Notification notification = nBuilder.build();
+    mNM.notify(1, notification);
+  }
+
+  void setNotificationListeners(RemoteViews view){
+    Intent intent = new Intent(MainActivity.this, NotificationReturnSlot.class).setAction(ACTION_TOGGLE);
+    PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    view.setOnClickPendingIntent(R.id.toggle, pendingIntent);
+
+    Intent nextIntent = new Intent(MainActivity.this, NotificationReturnSlot.class).setAction(ACTION_NEXT);
+    PendingIntent pendingNextIntent = PendingIntent.getBroadcast(MainActivity.this, 0, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    view.setOnClickPendingIntent(R.id.next, pendingNextIntent);
+
+    Intent prevIntent = new Intent(MainActivity.this, NotificationReturnSlot.class).setAction(ACTION_PREV);
+    PendingIntent pendingPrevIntent = PendingIntent.getBroadcast(MainActivity.this, 0, prevIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    view.setOnClickPendingIntent(R.id.prev, pendingPrevIntent);
+
+    Intent closeIntent = new Intent(MainActivity.this, NotificationReturnSlot.class).setAction(ACTION_STOP);
+    PendingIntent pendingCloseIntent = PendingIntent.getBroadcast(MainActivity.this, 0, closeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    view.setOnClickPendingIntent(R.id.close, pendingCloseIntent);
+
+    Intent selectIntent = new Intent(MainActivity.this, NotificationReturnSlot.class).setAction(ACTION_SELECT);
+    PendingIntent selectPendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, selectIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+    view.setOnClickPendingIntent(R.id.layout, selectPendingIntent);
+  }
+
+  public static class NotificationReturnSlot extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      String action = intent.getAction();
+      if (action == null) {
+        return;
+      }
+      Log.i(TAG, action);
+      if (action.equals(ACTION_SELECT)) {
+        Intent closeDialog = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        context.sendBroadcast(closeDialog);
+        String packageName = context.getPackageName();
+        PackageManager pm = context.getPackageManager();
+        Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
+        context.startActivity(launchIntent);
+      } else {
+        MainActivity.eventSink.success(action);
+        if (action.equals(ACTION_STOP))
+          MainActivity.mNM.cancel(1);
+      }
     }
-    return false;
   }
 }

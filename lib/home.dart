@@ -67,14 +67,14 @@ class _HomeState extends State<Home> {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
     if(androidInfo.model == "V2")
-      watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
+      watchID = "/watch?v=ZqcIgCDWtGs";
+    // watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
     // watchID = "/watch?v=iP8SqetfseI"; // test, 如實記
     if(watchID.length > 0 && Platform.isAndroid){
       new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
         openVideo(watchID); // "/watch?v=sTjJ1LlviKM");
       });
     }
-    
   }
 
   @override
