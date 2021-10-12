@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mytube/download.dart';
@@ -8,7 +9,8 @@ import 'package:mytube/system/system.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:mytube/video/fileSave.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
+// import 'package:mytube/system/global.dart' as global;
 
 Download download = new Download();
 
@@ -23,6 +25,7 @@ class Player extends StatefulWidget {
 class _PlayerState extends State<Player> {
   int processing = -1, streamsTimes = 0;
   var player, timer;
+  String videoKey = "";
   
   @override
   void initState() {
@@ -38,6 +41,7 @@ class _PlayerState extends State<Player> {
     var file = File(fileName);
     // url = ""; // for test................
     // print("MyTube.Storage.url: $url, filtName: $fileName");
+    videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
     try{
       if(url == this.widget.url && file.existsSync()) {
         download.fileName = await Storage.getString("fileName");
@@ -48,7 +52,12 @@ class _PlayerState extends State<Player> {
         processing = 100;
         setState(() { });
       } else {
-        await getStream();
+        // String s = await Storage.getString("history");
+        // if(s.indexOf(videoKey) > -1) {
+        //   List<History> history = jsonDecode(s);
+
+        // } else
+          await getStream();
       }
     } catch(e) {
       print("MyTube.player: $e");
@@ -338,6 +347,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   Duration _duration = Duration(seconds: 0);
   Duration _position = Duration(seconds: 0);
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
+  var interval = null;
 
   @override
   void initState() {
@@ -346,29 +356,29 @@ class _PlayerControlerState extends State<PlayerControler> {
     _controller = VideoPlayerController
     .file(File("file://" + widget.fileName))
     ..addListener(() {
-      Timer.run( () {
-        if(_controller!.value.isPlaying == true){
-          _position = _controller!.value.position;
-          this.setState((){
-            if(_position.inSeconds > 0 && _duration.inMilliseconds - _position.inMilliseconds <= 600) {
-              stop();
-              setState(() { });
-            } else if(_position.inSeconds > 1 && _position.inSeconds % 10 == 0) {
-              if(_controller!.value.isPlaying == false) {
-                stop();
-                setState(() { });
-              }
-              Storage.setInt("position", _position.inSeconds);
-              methodChannel.invokeMethod('play', {
-                "title": download.title,
-                "author": download.author,
-                "position": '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
-              });
+      // Timer.run( () {
+      //   if(_controller!.value.isPlaying == true){
+      //     _position = _controller!.value.position;
+      //     this.setState((){
+      //       if(_position.inSeconds > 0 && _duration.inMilliseconds - _position.inMilliseconds <= 600) {
+      //         stop();
+      //         setState(() { });
+      //       } else if(_position.inSeconds > 1 && _position.inSeconds % 10 == 0) {
+      //         if(_controller!.value.isPlaying == false) {
+      //           stop();
+      //           setState(() { });
+      //         }
+      //         Storage.setInt("position", _position.inSeconds);
+      //         methodChannel.invokeMethod('play', {
+      //           "title": download.title,
+      //           "author": download.author,
+      //           "position": '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
+      //         });
               
-            }
-          });
-        }
-      });
+      //       }
+      //     });
+      //   }
+      // });
       if(_controller != null){
         try{
           setState(() {
@@ -408,9 +418,14 @@ class _PlayerControlerState extends State<PlayerControler> {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
-    _controller!.seekTo(Duration(seconds: 1900));
-    print("MyTube.player.reassemble: ${_position.inSeconds} / ${_duration.inSeconds}");
-    play();
+    // print("MyTube.isLargeScreen: ${global.isLargeScreen()}");
+   
+    // _controller!.seekTo(Duration(seconds: 460));
+    // Timer(Duration(milliseconds: 600), () {
+    //   _position = _controller!.value.position;
+    //   play();
+    //   this.setState((){});
+    // });
   }
   @override
   void dispose() {
@@ -421,6 +436,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   }
 
   play() async {
+    setInterval();
     _controller!.play();
     await methodChannel.invokeMethod('play', {
       "title": download.title,
@@ -436,13 +452,42 @@ class _PlayerControlerState extends State<PlayerControler> {
     });
   }
   stop() async {
-    print("MyTube.player.stop()");
+    if(interval != null) interval.cancel();
     _controller!.pause();
     _controller!.seekTo(Duration(seconds: 0));
     Storage.setInt("position", 0);
     _position = Duration(seconds: 0);
-    
     await methodChannel.invokeMethod('stop');
+  }
+
+  setInterval(){
+    Timer.periodic(Duration(milliseconds: 300), (timer) {
+      interval = timer;
+      if(_controller!.value.isPlaying == true){
+        _position = _controller!.value.position;
+        this.setState((){
+          if(_position.inSeconds > 0 && _duration.inMilliseconds - _position.inMilliseconds <= 600) {
+            stop();
+            setState(() { });
+          } else if(_position.inSeconds > 1 && _position.inSeconds % 10 == 0) {
+            if(_controller!.value.isPlaying == false) {
+              stop();
+              setState(() { });
+            }
+            Storage.setInt("position", _position.inSeconds);
+            methodChannel.invokeMethod('play', {
+              "title": download.title,
+              "author": download.author,
+              "position": '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
+            });
+          }
+        });
+      } else {
+        print("MyTube.time.cancel..................");
+        timer.cancel();
+        interval = null;
+      }
+    });
   }
 
   @override
@@ -472,6 +517,10 @@ class _PlayerControlerState extends State<PlayerControler> {
           onChanged: (double value) {
             setState(() {
               _controller!.seekTo(Duration(seconds: value.toInt()));
+              Timer(Duration(milliseconds: 600), () {
+                _position = _controller!.value.position;
+                this.setState((){});
+              });
             });
           },
         ),
@@ -739,4 +788,17 @@ class _GridState extends State<Grid> {
       )
     );
   }
+}
+
+class History {
+  String key, title, author, date;
+
+  History(this.key, this.title, this.author, this.date);
+
+  Map toJson() => {
+    'key': key,
+    "title": title,
+    "author": author,
+    "date": date
+  };
 }

@@ -2,7 +2,6 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
 //https://pub.dev/packages/youtube_explode_dart
 
 class Download {
@@ -11,7 +10,7 @@ class Download {
   Duration duration = Duration(seconds: 0);
   final yt = YoutubeExplode();
   bool stop = false, isVideo = false;
-  var audio = null, streams;
+  var audio, streams;
 
   static Future<String> folder() async {
     final methodChannel = const MethodChannel('com.flutter/MethodChannel');

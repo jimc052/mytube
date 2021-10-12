@@ -54,7 +54,7 @@ class Storage{
   // 获取返回为StringList的内容
   static getStringList(String key) async{
       final prefs = await SharedPreferences.getInstance();
-      List<String> value = prefs.getStringList(key) ?? [];
+      List<String> value = prefs.getStringList(key) ?? [];      
       return value;
   }
   // 移除单个

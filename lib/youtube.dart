@@ -3,8 +3,7 @@ export 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/material.dart';
 
 extension on WebView { // 沒有用到
-  String get host => "https://www.youtube.com/";
-  // this.WebViewController
+  // String get host => "https://www.youtube.com/";
 }
 
 extension MyWebController on WebViewController {
