@@ -24,7 +24,7 @@ class Player extends StatefulWidget {
 
 class _PlayerState extends State<Player> {
   int processing = -1, streamsTimes = 0;
-  var player, timer;
+  var player, timerChoice;
   String videoKey = "";
   
   @override
@@ -187,7 +187,7 @@ class _PlayerState extends State<Player> {
                 }, onPress: (index) {
                   choiceVideo(index);
                 }, onChange: (){
-                  if(timer != null) timer.cancel();
+                  if(timerChoice != null) timerChoice.cancel();
                   Fluttertoast.cancel();
                 }),
               if(processing == 100)
@@ -209,7 +209,7 @@ class _PlayerState extends State<Player> {
                         await getStream();
                     },
                   ),
-                  Container(width: 5,),
+                  Container(width: 5),
                   ElevatedButton(
                     child: Text('另存新檔'),
                     style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
@@ -299,7 +299,7 @@ class _PlayerState extends State<Player> {
   }
 
   void choiceVideo(index) async {
-    if(timer != null) timer.cancel();
+    if(timerChoice != null) timerChoice.cancel();
     Fluttertoast.cancel();
     download.audio = download.streams.elementAt(index);
     try {
@@ -317,7 +317,7 @@ class _PlayerState extends State<Player> {
       else if(download.qualityHigh > -1) 
         index = download.qualityHigh;
     }
-    timer = Timer(Duration(seconds: sec), () => choiceVideo(index));
+    timerChoice = Timer(Duration(seconds: sec), () => choiceVideo(index));
 
     Fluttertoast.showToast(
       msg: "$sec 秒後，自動選取第 ${index + 1} 個選項!!",
@@ -347,7 +347,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   Duration _duration = Duration(seconds: 0);
   Duration _position = Duration(seconds: 0);
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
-  var interval = null;
+  var interval, state = "onResume";
 
   @override
   void initState() {
@@ -356,37 +356,12 @@ class _PlayerControlerState extends State<PlayerControler> {
     _controller = VideoPlayerController
     .file(File("file://" + widget.fileName))
     ..addListener(() {
-      // Timer.run( () {
-      //   if(_controller!.value.isPlaying == true){
-      //     _position = _controller!.value.position;
-      //     this.setState((){
-      //       if(_position.inSeconds > 0 && _duration.inMilliseconds - _position.inMilliseconds <= 600) {
-      //         stop();
-      //         setState(() { });
-      //       } else if(_position.inSeconds > 1 && _position.inSeconds % 10 == 0) {
-      //         if(_controller!.value.isPlaying == false) {
-      //           stop();
-      //           setState(() { });
-      //         }
-      //         Storage.setInt("position", _position.inSeconds);
-      //         methodChannel.invokeMethod('play', {
-      //           "title": download.title,
-      //           "author": download.author,
-      //           "position": '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
-      //         });
-              
-      //       }
-      //     });
-      //   }
-      // });
       if(_controller != null){
         try{
           setState(() {
             _duration = _controller!.value.duration;
-            // _controller!.value.
           });           
         } catch(e){
-
         }
       }
     })
@@ -410,6 +385,10 @@ class _PlayerControlerState extends State<PlayerControler> {
         } else if(data == "action.STOP"){
           stop();
           this.setState((){});
+        } else if(data == "onPause") {
+          state = data;
+        } else if(data == "onResume") {
+          state = data;
         }
       }
     });
@@ -460,16 +439,18 @@ class _PlayerControlerState extends State<PlayerControler> {
     await methodChannel.invokeMethod('stop');
   }
 
-  setInterval(){
-    Timer.periodic(Duration(milliseconds: 300), (timer) {
+  DateTime dtFirst = DateTime.now();
+  setInterval(){ // ==========================
+    Timer.periodic(Duration(milliseconds: 100), (timer) {
       interval = timer;
       if(_controller!.value.isPlaying == true){
         _position = _controller!.value.position;
-        this.setState((){
-          if(_position.inSeconds > 0 && _duration.inMilliseconds - _position.inMilliseconds <= 600) {
-            stop();
-            setState(() { });
-          } else if(_position.inSeconds > 1 && _position.inSeconds % 10 == 0) {
+        if(_position.inSeconds > 0 && _duration.inMilliseconds - _position.inMilliseconds <= 600) {
+          stop();
+          setState(() { });
+        } else {
+          if(DateTime.now().difference(dtFirst).inSeconds >= 10) {
+            dtFirst = DateTime.now();
             if(_controller!.value.isPlaying == false) {
               stop();
               setState(() { });
@@ -481,11 +462,13 @@ class _PlayerControlerState extends State<PlayerControler> {
               "position": '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
             });
           }
-        });
+          if(state == "onResume") {
+            this.setState((){});
+          }
+        }
       } else {
-        print("MyTube.time.cancel..................");
-        timer.cancel();
-        interval = null;
+        interval.cancel();
+        setState(() { });
       }
     });
   }
@@ -517,7 +500,7 @@ class _PlayerControlerState extends State<PlayerControler> {
           onChanged: (double value) {
             setState(() {
               _controller!.seekTo(Duration(seconds: value.toInt()));
-              Timer(Duration(milliseconds: 600), () {
+              Timer(Duration(milliseconds: 300), () {
                 _position = _controller!.value.position;
                 this.setState((){});
               });
@@ -544,11 +527,8 @@ class _PlayerControlerState extends State<PlayerControler> {
                     color: !_controller!.value.isPlaying ?  Colors.black54 : Colors.grey.shade300,
                     iconSize: 20,
                     onPressed: () {
-                      setState(() {
-                        _controller!.value.isPlaying
-                            ? pause()
-                            : play();
-                      });
+                      _controller!.value.isPlaying ? pause() : play();
+                      setState(() { });
                     },
                   )
                 )

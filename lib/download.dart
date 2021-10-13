@@ -60,6 +60,7 @@ class Download {
   }
 
   Future<void> execute({String fileName = "", String folder = "", required Function(int) onProcessing}) async {
+    stop = false;
     try {
       // print("MyTube.audio: ${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, videoQualityLabel: ${audio.videoQualityLabel}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
       // print("MyTube.container: " + audio.container.name.toString());
@@ -90,7 +91,7 @@ class Download {
         file.deleteSync();
       }
 
-      var audioStream = yt.videos.streamsClient.get(audio); // 有聲音，但有 2倍長度
+      var audioStream = yt.videos.streamsClient.get(audio); 
       var output = file.openWrite(mode: FileMode.writeOnlyAppend);
       var len = audio.size.totalBytes;
       var count = 0;
