@@ -4,12 +4,19 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 //https://pub.dev/packages/youtube_explode_dart
 
+enum Mode {
+   none,
+   video,
+   audio,
+}  
+
 class Download {
   String title = "", author = "", fileName = "", path = "", url = "", mb = "";
   int qualityHigh = -1, qualityLow = -1, qualityMedium = -1, selected = -1;
   Duration duration = Duration(seconds: 0);
   final yt = YoutubeExplode();
-  bool stop = false, isVideo = false;
+  bool stop = false;
+  Mode mode = Mode.none;
   var audio, streams;
 
   static Future<String> folder() async {
@@ -34,7 +41,7 @@ class Download {
 
   Future<dynamic> getVideoStream() async {
     try {
-      isVideo = true; mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1; selected = -1;
+      mode = Mode.video; mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1; selected = -1;
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.muxed; // manifest.videoOnly;
       return streams;
@@ -46,7 +53,7 @@ class Download {
 
   Future<void> getAudioStream() async {
     try {
-      isVideo = false;  mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1; selected = -1;
+      mode = Mode.audio;  mb = ""; qualityHigh = -1; qualityLow = -1; qualityMedium = -1; selected = -1;
       var manifest = await yt.videos.streamsClient.getManifest(url);
       streams = manifest.audioOnly;
     } catch(e) {
@@ -79,17 +86,18 @@ class Download {
       
       this.fileName = path + (folder.length > 0 ? '/$folder' : '') + '/$fileName';
       var file = File(this.fileName);
-      if(fileName.indexOf("youtube.") == 0) {
-        List f1 = ['3gpp', 'webm', 'mp4'];
-        for(var i = 0; i < f1.length; i++) {
-          var f2 = File(path + '/$folder/' + 'youtube.' + f1[i]);
-          if (f2.existsSync()) {
-            f2.deleteSync();
-          }
-        }
-      } else if (file.existsSync()) {
-        file.deleteSync();
-      }
+      removeFile();
+      // if(fileName.indexOf("youtube.") == 0) {
+      //   List f1 = ['3gpp', 'webm', 'mp4'];
+      //   for(var i = 0; i < f1.length; i++) {
+      //     var f2 = File(path + '/$folder/' + 'youtube.' + f1[i]);
+      //     if (f2.existsSync()) {
+      //       f2.deleteSync();
+      //     }
+      //   }
+      // } else if (file.existsSync()) {
+      //   file.deleteSync();
+      // }
 
       var audioStream = yt.videos.streamsClient.get(audio); 
       var output = file.openWrite(mode: FileMode.writeOnlyAppend);
@@ -99,13 +107,35 @@ class Download {
       await for (final data in audioStream) {
         count += data.length;
         var progress = ((count / len) * 100).ceil();
-        if(stop == false) onProcessing(progress);
+        if(stop == false) {
+          onProcessing(progress);
+        } else {
+          
+          break;
+        }
         output.add(data);
       }
-      await output.close();
+      if(stop == true)
+        removeFile();
+      else 
+        await output.close();
     } catch(e) {
       print(e);
       throw e;
+    }
+  }
+  removeFile(){
+    var file = File(this.fileName);
+    if(fileName.indexOf("youtube.") == 0) {
+      List f1 = ['3gpp', 'webm', 'mp4'];
+      for(var i = 0; i < f1.length; i++) {
+        var f2 = File(path + '/$folder/' + 'youtube.' + f1[i]);
+        if (f2.existsSync()) {
+          f2.deleteSync();
+        }
+      }
+    } else if (file.existsSync()) {
+      file.deleteSync();
     }
   }
 }

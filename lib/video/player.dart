@@ -179,38 +179,40 @@ class _PlayerState extends State<Player> {
                 )
               ),
               if(processing == -1)
-                Grid(onReady: (result) {
-                  if(streamsTimes == 0) { // 在第一次自動觸發
-                    if(result > 0) toast();
-                    streamsTimes = 1;
+                Grid(mode: download.mode,
+                  onReady: (result) {
+                    if(streamsTimes == 0) { // 在第一次自動觸發
+                      if(result > 0) toast();
+                      streamsTimes = 1;
+                    }
+                  }, onPress: (index) {
+                    choiceVideo(index);
+                  }, onChange: (){
+                    if(timerChoice != null) timerChoice.cancel();
+                    Fluttertoast.cancel();
                   }
-                }, onPress: (index) {
-                  choiceVideo(index);
-                }, onChange: (){
-                  if(timerChoice != null) timerChoice.cancel();
-                  Fluttertoast.cancel();
-                }),
-              if(processing == 100)
-                Row(children: [
-                  ElevatedButton(
-                    child: Text('重新選擇'),
-                    style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
-                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: height > 800 ? 10 : 5))
-                    ),
-                    onPressed: () async {
-                      if(download.streams == null){
-                        download.title = "";
-                        streamsTimes = 1;
-                      }
-                      processing = -1;
-                      setState(() {});
-                      player = null;
-                      if(download.streams == null)
-                        await getStream();
-                    },
+                ),
+              Row(children: [
+                if(processing > -1) ElevatedButton(
+                  child: Text('重新選擇'),
+                  style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
+                    padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: height > 800 ? 10 : 5))
                   ),
-                  Container(width: 5),
-                  ElevatedButton(
+                  onPressed: () async {
+                    if(download.streams == null){
+                      download.title = "";
+                      streamsTimes = 1;
+                    }
+                    download.stop = true;
+                    processing = -1;
+                    setState(() {});
+                    player = null;
+                    if(download.streams == null)
+                      await getStream();
+                  },
+                ),
+                if(processing == 100) Container(width: 5),
+                if(processing == 100) ElevatedButton(
                     child: Text('另存新檔'),
                     style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
                       padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical:  height > 800 ? 10 : 5))
@@ -219,8 +221,7 @@ class _PlayerState extends State<Player> {
                       fileSave(context); 
                     },
                   )
-                ]
-              ),
+              ]),
               Container(height: 5,)
             ]
           )
@@ -477,7 +478,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    double aspectRatio = download.isVideo == false && width < height ? 4.0 : _controller!.value.aspectRatio;
+    double aspectRatio = download.mode == Mode.audio && width < height ? 4.0 : _controller!.value.aspectRatio;
     
     return Container(
       width: (width < height ? width : (((height - 160) * _controller!.value.aspectRatio).roundToDouble())),
@@ -552,7 +553,8 @@ class Grid extends StatefulWidget {
   Function(int)? onReady;
   Function(int)? onPress;
   Function()? onChange;
-  Grid({Key? key, this.onPress, this.onReady, this.onChange}) : super(key: key);
+  Mode mode;
+  Grid({Key? key, this.mode = Mode.none, this.onPress, this.onReady, this.onChange}) : super(key: key);
 
   @override
   _GridState createState() => _GridState();
@@ -570,12 +572,15 @@ class _GridState extends State<Grid> {
   }
 
   initial() async {
-    var width = MediaQuery.of(context).size.width;
-    if(width > 800) {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      isVideo = (connectivityResult == ConnectivityResult.wifi);
+    if(this.widget.mode == Mode.none) {
+      var width = MediaQuery.of(context).size.width;
+      if(width > 800) {
+        var connectivityResult = await Connectivity().checkConnectivity();
+        isVideo = (connectivityResult == ConnectivityResult.wifi);
+      }
+    } else {
+      isVideo = this.widget.mode == Mode.video ? true : false;
     }
-    // isVideo = false; // test ........................
     await getStream();
   }
 
@@ -614,7 +619,7 @@ class _GridState extends State<Grid> {
         if(arr[i].size.totalMegaBytes < size || i == 0) {
           size = arr[i].size.totalMegaBytes;
           index = i;
-      }
+        }
       }
       download.qualityMedium = index;
       // print("MyTube.audio $index: ${arr[index].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==========================");
@@ -653,9 +658,9 @@ class _GridState extends State<Grid> {
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Text(isVideo == true ? '視頻' : '音頻',
+            Text('音頻',
               style: TextStyle(
-                color: isVideo == true ? Colors.blue : Colors.grey[400],
+                color: isVideo == false ? Colors.blue : Colors.grey[400],
                 fontSize: 20,
               ) 
             ),
@@ -673,7 +678,13 @@ class _GridState extends State<Grid> {
                     });
                   })
               )
-            )
+            ),
+            Text('視頻',
+              style: TextStyle(
+                color: isVideo == true ? Colors.blue : Colors.grey[400],
+                fontSize: 20,
+              ) 
+            ),
           ],
         ),
       ] 
@@ -712,6 +723,9 @@ class _GridState extends State<Grid> {
               bg = Colors.red.shade500; 
               color = Colors.white;
             }  
+          } else if(download.qualityMedium == index) {
+            bg = Colors.green.shade500; 
+            color = Colors.white;
           }
 
           double fontSize = width < 800 ? 16 : 24;
@@ -775,7 +789,7 @@ class History {
 
   History(this.key, this.title, this.author, this.date);
 
-  Map toJson() => {
+  Map<String, dynamic> toJson() => {
     'key': key,
     "title": title,
     "author": author,
