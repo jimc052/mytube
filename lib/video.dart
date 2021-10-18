@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:mytube/system/history.dart';
 import 'package:mytube/video/player.dart';
 import 'package:mytube/video/browser.dart';
 import 'package:mytube/system/system.dart';
 import 'package:mytube/youtube.dart';
 import 'dart:ui'; 
 import 'dart:async';
+import 'dart:io';
+import 'dart:convert';
 
 class Video extends StatefulWidget {
   final String url;
   Video({Key? key, required this.url}) : super(key: key){
     // print("MyTube.Video.url: " + this.url);
-    print("${Youtube.host}");
+    // print("${Youtube.host}");
   }
 
   @override
@@ -31,6 +34,40 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
     super.didChangeDependencies();
     local = await Storage.getInt("isLocal");
     this.setState(() {});
+    // alert(context, "test",
+    //         actions: [{"text": "確定", "onPressed": (){
+    //           Navigator.pop(context);
+    //         }}]
+    //       );
+    
+    String url = await Storage.getString("url");
+    String fileName = await Storage.getString("fileName");
+    var file = File(fileName);
+    try{
+      if(url == this.widget.url && file.existsSync()) {
+        
+      } else {
+        // var videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
+        // String s = await Storage.getString("historys");
+        // Map<String, dynamic> historys = {};
+        // if(s.length > 0) {
+        //   historys = jsonDecode(s);
+        // }
+        // print("MyTube.historys: ${historys}");
+        // if(historys.containsKey(videoKey)) {
+        //   History history = historys[videoKey];
+        //   alert(context, "${history.title}：\n曾於 ${history.date} 觀賞，\n${history.position}",
+        //     actions: [{"text": "確定", "onPressed": (){
+        //       Navigator.pop(context);
+        //     }}]
+        //   );
+        // }
+      }
+    } catch(e) {
+      print("MyTube.player: $e");
+      alert(context, e.toString());
+    }
+    // Navigator.pop(context);
   }
   @override
   void didChangeAppLifecycleState(AppLifecycleState state)  {

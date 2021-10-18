@@ -11,6 +11,8 @@ import 'package:connectivity/connectivity.dart';
 import 'package:mytube/video/fileSave.dart';
 // import 'package:flutter/services.dart';
 // import 'package:mytube/system/global.dart' as global;
+import 'package:mytube/system/history.dart';
+import 'package:mytube/extension/extension.dart';
 
 Download download = new Download();
 
@@ -31,6 +33,7 @@ class _PlayerState extends State<Player> {
   void initState() {
     super.initState();
     download = new Download();
+    videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
   }
 
   @override
@@ -39,9 +42,6 @@ class _PlayerState extends State<Player> {
     String url = await Storage.getString("url");
     String fileName = await Storage.getString("fileName");
     var file = File(fileName);
-    // url = ""; // for test................
-    // print("MyTube.Storage.url: $url, filtName: $fileName");
-    videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
     try{
       if(url == this.widget.url && file.existsSync()) {
         download.fileName = await Storage.getString("fileName");
@@ -50,14 +50,9 @@ class _PlayerState extends State<Player> {
         download.mb = await Storage.getString("mb");
         download.duration = Duration(milliseconds: await Storage.getInt("duration"));
         processing = 100;
-        setState(() { });
+        setState(() {});
       } else {
-        // String s = await Storage.getString("history");
-        // if(s.indexOf(videoKey) > -1) {
-        //   List<History> history = jsonDecode(s);
-
-        // } else
-          await getStream();
+        await getStream();
       }
     } catch(e) {
       print("MyTube.player: $e");
@@ -163,7 +158,7 @@ class _PlayerState extends State<Player> {
 
     List<Widget> widget = [];
     if(processing == 100)
-      widget.add(PlayerControler(fileName: download.fileName, controller: player,));
+      widget.add(PlayerControler(fileName: download.fileName, videoKey: videoKey, controller: player,));
     widget.add(Expanded( flex: 1,
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 8.0),
@@ -333,10 +328,10 @@ class _PlayerState extends State<Player> {
 }
 
 class PlayerControler extends StatefulWidget {
-  final String fileName;
+  final String fileName, videoKey;
   dynamic controller;
 
-  PlayerControler({Key? key, required this.fileName, required this.controller}) : super(key: key);
+  PlayerControler({Key? key, required this.fileName, required this.videoKey, required this.controller}) : super(key: key);
 
   @override
   _PlayerControlerState createState() => _PlayerControlerState();
@@ -416,6 +411,7 @@ class _PlayerControlerState extends State<PlayerControler> {
   }
 
   play() async {
+    saveHistory();
     setInterval();
     _controller!.play();
     await methodChannel.invokeMethod('play', {
@@ -430,6 +426,7 @@ class _PlayerControlerState extends State<PlayerControler> {
       "title": download.title,
       "author": download.author,
     });
+    saveHistory();
   }
   stop() async {
     if(interval != null) interval.cancel();
@@ -438,6 +435,14 @@ class _PlayerControlerState extends State<PlayerControler> {
     Storage.setInt("position", 0);
     _position = Duration(seconds: 0);
     await methodChannel.invokeMethod('stop');
+    saveHistory();
+  }
+
+  saveHistory(){
+    final DateTime now = DateTime.now();
+    History h = History(this.widget.videoKey, download.title, download.author, 
+      now.formate(), 
+      '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}');
   }
 
   DateTime dtFirst = DateTime.now();
@@ -782,17 +787,4 @@ class _GridState extends State<Grid> {
       )
     );
   }
-}
-
-class History {
-  String key, title, author, date;
-
-  History(this.key, this.title, this.author, this.date);
-
-  Map<String, dynamic> toJson() => {
-    'key': key,
-    "title": title,
-    "author": author,
-    "date": date
-  };
 }

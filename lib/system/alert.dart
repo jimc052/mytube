@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-void alert(BuildContext context, String msg, {List<Widget>? actions}) {
+void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
+  List<Widget> _actions = [];
   print("MyTube.alert: $msg");
   Widget title =
     Container(child: 
@@ -30,15 +31,12 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
     ),
   );
   if(actions == null) {
-    actions = [
+    _actions = [
       ElevatedButton(
         onPressed: () {
           Navigator.pop(context, true);
         },
-        child: Text(
-          "確定",
-          // style: TextStyle(color: Colors.black),
-        ),
+        child: Text( "確定"),
         style: ElevatedButton.styleFrom(
           primary: Colors.blue,
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
@@ -49,6 +47,31 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
         ),
       )
     ];
+  } else {
+    for(int i = 0; i < actions.length; i++) {
+      if(actions[i].text is String) {
+        _actions.add(
+          ElevatedButton(
+            onPressed: () {
+              if(actions[i].onPressed is Function) {
+                actions[i].onPressed();
+              }
+              Navigator.pop(context);
+            },
+            child: Text(actions[i].text),
+            style: ElevatedButton.styleFrom(
+              primary: Colors.blue,
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              textStyle: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold
+              )
+            ),
+          )
+          /////
+        );
+      }
+    }
   }
   AlertDialog dialog = AlertDialog(
     // title: Text("MyTube"),
@@ -80,7 +103,7 @@ void alert(BuildContext context, String msg, {List<Widget>? actions}) {
           ],
         )
     ),
-    actions: actions,
+    actions: _actions,
   );
 
   showDialog(
