@@ -27,12 +27,18 @@ class _HomeState extends State<Home> {
     super.initState();
     
     eventChannel.receiveBroadcastStream().listen((data) async {
+      // print("MyTube.event: $data");
       if(data == "onStop" && webViewController != null) {
+        this.webViewController!.readAnchor(false);
         // timer = Timer(Duration(minutes: 20), () {
         //   methodChannel.invokeMethod('finish');
         // });
       } else if(data == "onResume"){
         // if(timer != null) timer.cancel();
+        String url = (await this.webViewController!.currentUrl()).toString();
+        if(url.indexOf("/watch?") == -1) {
+          this.webViewController!.readAnchor(true);
+        }
       } else if(data == "unplugged") {
         String url = (await this.webViewController!.currentUrl()).toString();
         if(url.indexOf("/watch?") > -1) {

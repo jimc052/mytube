@@ -15,7 +15,7 @@ import 'package:mytube/system/history.dart';
 import 'package:mytube/extension/extension.dart';
 
 Download download = new Download();
-
+Map<String, dynamic> historys = {};
 class Player extends StatefulWidget {
   final String url;
   Player({Key? key, required this.url}) : super(key: key);
@@ -52,7 +52,23 @@ class _PlayerState extends State<Player> {
         processing = 100;
         setState(() {});
       } else {
-        await getStream();
+        var videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
+        String s = await Storage.getString("historys");
+        if(s.length > 0) {
+          historys = jsonDecode(s);
+        }
+        // print("MyTube.historys: ${historys}");
+        if(historys.containsKey(videoKey)) {
+          print("MyTube.historys: ${historys[videoKey]}");
+          History history = historys[videoKey];
+          print("MyTube.historys: ${history}");
+          alert(context, "${history.title}：\n曾於 ${history.date} 觀賞，\n${history.position}",
+            actions: [{"text": "確定", "onPressed": (){
+              Navigator.pop(context);
+            }}]
+          );
+        } else
+          await getStream();
       }
     } catch(e) {
       print("MyTube.player: $e");
@@ -188,26 +204,28 @@ class _PlayerState extends State<Player> {
                   }
                 ),
               Row(children: [
-                if(processing > -1) ElevatedButton(
-                  child: Text('重新選擇'),
-                  style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
-                    padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: height > 800 ? 10 : 5))
+                if(processing > -1) 
+                  ElevatedButton(
+                    child: Text('重新選擇'),
+                    style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
+                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical: height > 800 ? 10 : 5))
+                    ),
+                    onPressed: () async {
+                      if(download.streams == null){
+                        download.title = "";
+                        streamsTimes = 1;
+                      }
+                      download.stop = true;
+                      processing = -1;
+                      setState(() {});
+                      player = null;
+                      if(download.streams == null)
+                        await getStream();
+                    },
                   ),
-                  onPressed: () async {
-                    if(download.streams == null){
-                      download.title = "";
-                      streamsTimes = 1;
-                    }
-                    download.stop = true;
-                    processing = -1;
-                    setState(() {});
-                    player = null;
-                    if(download.streams == null)
-                      await getStream();
-                  },
-                ),
                 if(processing == 100) Container(width: 5),
-                if(processing == 100) ElevatedButton(
+                if(processing == 100) 
+                  ElevatedButton(
                     child: Text('另存新檔'),
                     style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
                       padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical:  height > 800 ? 10 : 5))
@@ -438,11 +456,13 @@ class _PlayerControlerState extends State<PlayerControler> {
     saveHistory();
   }
 
-  saveHistory(){
+   saveHistory() async {
     final DateTime now = DateTime.now();
-    History h = History(this.widget.videoKey, download.title, download.author, 
+    History h = History(download.title, download.author, 
       now.formate(), 
       '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}');
+    historys[this.widget.videoKey] = h;
+    await Storage.setString("historys", jsonEncode(historys));
   }
 
   DateTime dtFirst = DateTime.now();

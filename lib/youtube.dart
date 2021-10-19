@@ -52,7 +52,6 @@ extension MyWebController on WebViewController {
         }
       }
       if(b == false) readAnchor();
-
     }, 1000);
     
     function readAnchor(){

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
   List<Widget> _actions = [];
-  print("MyTube.alert: $msg");
   Widget title =
     Container(child: 
       Row(children: <Widget>[
@@ -41,24 +40,26 @@ void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
           primary: Colors.blue,
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
           textStyle: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold
+            fontSize: 14,
+            fontWeight: FontWeight.bold
           )
         ),
       )
     ];
   } else {
     for(int i = 0; i < actions.length; i++) {
-      if(actions[i].text is String) {
+      Map row = actions[i];
+      print("MyTube.alert: ${row['text']}");
+      if(row.containsKey("text") && row["text"] is String) {
         _actions.add(
           ElevatedButton(
             onPressed: () {
-              if(actions[i].onPressed is Function) {
-                actions[i].onPressed();
+              if(row.containsKey("onPressed") && row["onPressed"] is Function) {
+                row["onPressed"]();
               }
               Navigator.pop(context);
             },
-            child: Text(actions[i].text),
+            child: Text(row["text"]),
             style: ElevatedButton.styleFrom(
               primary: Colors.blue,
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
@@ -68,7 +69,6 @@ void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
               )
             ),
           )
-          /////
         );
       }
     }
@@ -109,6 +109,8 @@ void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
   showDialog(
     barrierDismissible: false,
     context: context, 
-    builder: (BuildContext context) => dialog,
+    builder: (BuildContext context) {
+      return dialog;
+    } 
   );
 }

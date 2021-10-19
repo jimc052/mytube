@@ -35,39 +35,13 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
     local = await Storage.getInt("isLocal");
     this.setState(() {});
     // alert(context, "test",
-    //         actions: [{"text": "確定", "onPressed": (){
-    //           Navigator.pop(context);
-    //         }}]
-    //       );
-    
-    String url = await Storage.getString("url");
-    String fileName = await Storage.getString("fileName");
-    var file = File(fileName);
-    try{
-      if(url == this.widget.url && file.existsSync()) {
-        
-      } else {
-        // var videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
-        // String s = await Storage.getString("historys");
-        // Map<String, dynamic> historys = {};
-        // if(s.length > 0) {
-        //   historys = jsonDecode(s);
-        // }
-        // print("MyTube.historys: ${historys}");
-        // if(historys.containsKey(videoKey)) {
-        //   History history = historys[videoKey];
-        //   alert(context, "${history.title}：\n曾於 ${history.date} 觀賞，\n${history.position}",
-        //     actions: [{"text": "確定", "onPressed": (){
-        //       Navigator.pop(context);
-        //     }}]
-        //   );
-        // }
-      }
-    } catch(e) {
-      print("MyTube.player: $e");
-      alert(context, e.toString());
-    }
-    // Navigator.pop(context);
+    //   actions: [
+    //     {"text": "取消"},
+    //     {"text": "確定", "onPressed": (){
+    //       // Navigator.pop(context);
+    //     }
+    //   }]
+    // );
   }
   @override
   void didChangeAppLifecycleState(AppLifecycleState state)  {
