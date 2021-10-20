@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
+void alert(BuildContext context, String msg, {String title = "", List<dynamic>? actions}) {
   List<Widget> _actions = [];
-  Widget title =
+  Widget _title =
     Container(child: 
       Row(children: <Widget>[
         // Icon(
@@ -11,7 +11,7 @@ void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
         //   size: 30,
         // ),
         // Padding(padding: EdgeInsets.only(right: 10)),
-        Text("MyTube",
+        Text("MyTube" + (title.length > 0 ? " - " + title + "" : "" ),
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -49,7 +49,7 @@ void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
   } else {
     for(int i = 0; i < actions.length; i++) {
       Map row = actions[i];
-      print("MyTube.alert: ${row['text']}");
+      // print("MyTube.alert: ${row['text']}");
       if(row.containsKey("text") && row["text"] is String) {
         _actions.add(
           ElevatedButton(
@@ -74,7 +74,6 @@ void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
     }
   }
   AlertDialog dialog = AlertDialog(
-    // title: Text("MyTube"),
     backgroundColor: Colors.white,
     contentPadding: EdgeInsets.zero,
     shape: RoundedRectangleBorder(
@@ -86,9 +85,10 @@ void alert(BuildContext context, String msg, {List<dynamic>? actions}) {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            title,
+            _title,
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, ),
+              // padding: const EdgeInsets.symmetric(horizontal: 10.0, ),
+              padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
               child: Scrollbar(
                 child: SingleChildScrollView(
                   child: Text(msg,

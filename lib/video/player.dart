@@ -39,6 +39,7 @@ class _PlayerState extends State<Player> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
+
     String url = await Storage.getString("url");
     String fileName = await Storage.getString("fileName");
     var file = File(fileName);
@@ -56,16 +57,35 @@ class _PlayerState extends State<Player> {
         String s = await Storage.getString("historys");
         if(s.length > 0) {
           historys = jsonDecode(s);
+          var arr = [];
+          var today = DateTime.now();
+          var day10 = today.add(const Duration(days: -10));
+          // not yet 2021-10-20 09:00
+
+          historys.forEach((k, v) {
+            Map<String, dynamic> history = jsonDecode(historys[videoKey]);
+            var date = '''${history['date']}''';
+            print("MyTube.date: $date");
+          });
+          arr.forEach((element) {
+            historys.remove(element);
+          });
         }
-        // print("MyTube.historys: ${historys}");
         if(historys.containsKey(videoKey)) {
-          print("MyTube.historys: ${historys[videoKey]}");
-          History history = historys[videoKey];
-          print("MyTube.historys: ${history}");
-          alert(context, "${history.title}：\n曾於 ${history.date} 觀賞，\n${history.position}",
-            actions: [{"text": "確定", "onPressed": (){
-              Navigator.pop(context);
-            }}]
+          Map<String, dynamic> history = jsonDecode(historys[videoKey]);
+          var title = '''${history['title']}''';
+          if(title.length > 30) title = title.substring(0, 30) + "...";
+          alert(context, '''標題：$title\n\n觀看時間：${history['date']}\n\n是否確定再次觀看???''',
+            title: "觀看記錄",
+            actions: [{"text": "取消", 
+                "onPressed": (){
+                  Navigator.pop(context);
+                }
+              }, {"text": "確定", 
+              "onPressed": () async {
+                await getStream();
+              }
+            }]
           );
         } else
           await getStream();
@@ -86,10 +106,16 @@ class _PlayerState extends State<Player> {
   @override
   void reassemble() async {
     super.reassemble();
-    // streamsTimes = 0;
-    // download.stop = true;
-    // Fluttertoast.cancel();
-    // processing = -1;
+    // var videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
+    // String s = await Storage.getString("historys");
+    // if(s.length > 0) {
+    //   historys = jsonDecode(s);
+    // }
+    // if(historys.containsKey(videoKey)) {
+    //   Map<String, dynamic> history = jsonDecode(historys[videoKey]);
+    //   // print("MyTube.historys: ${historys[videoKey]}"); 
+    //   print("MyTube.historys.String: ${history['title']}");
+    // }
   }
 
   Future<void> getStream() async {
@@ -439,12 +465,12 @@ class _PlayerControlerState extends State<PlayerControler> {
     });
   }
   pause() async {
+    saveHistory();
     _controller!.pause();
     await methodChannel.invokeMethod('pause', {
       "title": download.title,
       "author": download.author,
     });
-    saveHistory();
   }
   stop() async {
     if(interval != null) interval.cancel();
@@ -461,8 +487,12 @@ class _PlayerControlerState extends State<PlayerControler> {
     History h = History(download.title, download.author, 
       now.formate(), 
       '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}');
-    historys[this.widget.videoKey] = h;
+    historys[this.widget.videoKey] = jsonEncode(h);
+    // print("MyTube.history: ${jsonEncode(h)}");
     await Storage.setString("historys", jsonEncode(historys));
+
+    // String s = await Storage.getString("historys");
+    // print("MyTube.historys: $s");
   }
 
   DateTime dtFirst = DateTime.now();
