@@ -58,18 +58,21 @@ class _PlayerState extends State<Player> {
         if(s.length > 0) {
           historys = jsonDecode(s);
           var arr = [];
-          var today = DateTime.now();
-          var day10 = today.add(const Duration(days: -10));
-          // not yet 2021-10-20 09:00
-
+          var day10 = DateTime.now().add(const Duration(days: -10)).formate();
           historys.forEach((k, v) {
-            Map<String, dynamic> history = jsonDecode(historys[videoKey]);
+            Map<String, dynamic> history = jsonDecode(v);
+            print("MyTbue.history: $history");
             var date = '''${history['date']}''';
-            print("MyTube.date: $date");
+            if(date.compareTo(day10) == -1) {
+              arr.add(k);
+            }
           });
-          arr.forEach((element) {
-            historys.remove(element);
+
+          arr.forEach((el) {
+            historys.remove(el);
           });
+          if(arr.length > 0)
+            await Storage.setString("historys", jsonEncode(historys));
         }
         if(historys.containsKey(videoKey)) {
           Map<String, dynamic> history = jsonDecode(historys[videoKey]);

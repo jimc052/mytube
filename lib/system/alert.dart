@@ -61,11 +61,11 @@ void alert(BuildContext context, String msg, {String title = "", List<dynamic>? 
             },
             child: Text(row["text"]),
             style: ElevatedButton.styleFrom(
-              primary: Colors.blue,
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-              textStyle: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold
+                primary: Colors.blue,
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                textStyle: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold
               )
             ),
           )
