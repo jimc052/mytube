@@ -36,8 +36,8 @@ extension MyWebController on WebViewController {
       };
       ''');
   }
-  anchorClick(String cls) async { // 攔截 anchor click
-    print("Mytube.anchorClick: $cls");
+  setAnchorClick(String cls) async { // 攔截 anchor click
+    print("Mytube.setAnchorClick: $cls");
     await this.evaluateJavascript(
     '''
     setTimeout(()=>{
@@ -175,7 +175,7 @@ class Youtube extends StatelessWidget { // 沒有用到
       },
       onPageFinished: (String url) async {
         if(this.onPageFinished is Function) this.onPageFinished!(url);
-        // anchorClick(url);
+        // setAnchorClick(url);
       },
       debuggingEnabled: true,
       // gestureNavigationEnabled: true,

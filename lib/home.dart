@@ -108,7 +108,9 @@ class _HomeState extends State<Home> {
     // print("MyTube.onWillPop.currentUrl: $currenturl");
 
     if (this.webViewController != null && currenturl != url + "/") {
-      if(currenturl.indexOf("list=") > -1)
+      if(currenturl.indexOf("list=") > -1 || currenturl.indexOf("/feed/") > -1 || currenturl.indexOf("/user/") > -1) 
+        this.webViewController!.goBack();
+      else if(currenturl.indexOf("/playlists") > -1 || currenturl.indexOf("/videos") > -1 || currenturl.indexOf("/featured") > -1) 
         this.webViewController!.goBack();
       else
         this.webViewController!.loadUrl(url);
@@ -133,11 +135,15 @@ class _HomeState extends State<Home> {
             print("MyTube.onProgress: $url");
             currentURL = url;
             if(url == "https://m.youtube.com/" ) {
-              this.webViewController!.anchorClick("a.large-media-item-thumbnail-container");
-            } else if(url.indexOf("playlist?list") > -1) {
-              this.webViewController!.anchorClick("a.compact-media-item-image");
+              this.webViewController!.setAnchorClick("a.large-media-item-thumbnail-container");
+            } else if(url.indexOf("/feed/subscriptions") > -1) {
+              this.webViewController!.setAnchorClick(".item a"); // compact-media-item
+            } else if(url.indexOf("/user/") > -1) {
+              this.webViewController!.setAnchorClick(".compact-media-item a"); // 
+            } else if(url.indexOf("playlist?list=") > -1) {
+              this.webViewController!.setAnchorClick("a.compact-media-item-image"); 
             } else if(url.indexOf("#") > -1){
-            } else if(url.indexOf("feed/library") > -1) {
+            } else if(url.indexOf("/feed/library") > -1) {
               this.webViewController!.readAnchor(false);
               this.webViewController!.clearIntervalAD();
             } else if(url.indexOf("/watch?") > -1) {
@@ -173,7 +179,7 @@ class _HomeState extends State<Home> {
         print("myTube.onPageStarted.url: ${await this.webViewController!.currentUrl()}");
       },
       onPageFinished: (String url) async {
-
+        print("myTube.onPageFinished.url: ${await this.webViewController!.currentUrl()}");
       },
       debuggingEnabled: true,
       // gestureNavigationEnabled: true,
