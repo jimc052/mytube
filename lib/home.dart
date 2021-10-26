@@ -20,7 +20,7 @@ class _HomeState extends State<Home> {
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
   final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer, url = "https://m.youtube.com", permission = false;
-  String currentURL = "";
+  String currentURL = "", versionName = "";
 
   @override
   void initState() {
@@ -69,11 +69,13 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
+
+    versionName = await methodChannel.invokeMethod('getVersionName');
+
     String watchID = await Storage.getString("watchID");
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    if(androidInfo.model == "V2")
-      watchID = "/watch?v=ZqcIgCDWtGs";
+    if(androidInfo.model == "V2") watchID = "/watch?v=ZqcIgCDWtGs";
     // watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
     // watchID = "/watch?v=iP8SqetfseI"; // test, 如實記
     if(watchID.length > 0 && Platform.isAndroid){
@@ -96,13 +98,19 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: _onWillPop,
-      child: Container(
-        padding: EdgeInsets.only(top: 24.0),
-        child: this.permission == true ? createWeb() : null,
+        child: Container(
+            padding: EdgeInsets.only(top: 24.0),
+            child: Scaffold(
+          appBar: null, // AppBar(title: Text("MyTube")),
+          drawer: Drawer(
+            child: createMenu(),
+          ),
+          body: this.permission == true ? createWeb() : null,
+        ),
       )
     );
   }
-
+  
   Future<bool> _onWillPop() async {
     String currenturl = (await this.webViewController!.currentUrl()).toString();
     // print("MyTube.onWillPop.currentUrl: $currenturl");
@@ -186,6 +194,81 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget createListView(){
+    List<ListTile> list = [];
+    list.add(
+      ListTile(
+        title: Text('YouTube',
+          style: TextStyle(
+            // color: Colors.red,
+            fontSize: 20,
+          ),
+        ),
+        onTap: () { 
+          Navigator.pop(context);
+        }
+        // subtitle: _act != 2 ? const Text('The airplane is only in Act II.') : null,
+        // enabled: _act == 2,
+        // selected: true,
+        // leading: const Icon(Icons.flight_land),
+      )
+    );
+
+    return ListView.separated(
+      padding: EdgeInsets.zero,
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        return list[index];
+      },
+      separatorBuilder: (context, index) {
+        return Divider();
+      },
+    );
+  }
+  Widget createMenu(){
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: EdgeInsets.all(15.0),
+          decoration: BoxDecoration(
+            color: Colors.blue,
+          ),
+          width: double.infinity,
+          child: Text("MyTube",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 25,
+            ),
+          )
+        ),
+        Expanded(
+          flex: 1,
+          child: createListView()
+        ),
+        Container(
+          padding: EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            color: Colors.blue[400],
+            border: Border(
+              top: BorderSide(width: 2.0, color: Colors.lightBlue.shade600),
+            ),//Border.all(color: Colors.blueAccent)
+            // bottom: BorderSide(width: 16.0, color: Colors.lightBlue.shade900),
+          ),
+          width: double.infinity,
+          child: Text("by Jim Chen \n $versionName",
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          )
+        ),
+      ]
+    );
+  }
   JavascriptChannel javascriptChannel(BuildContext context) { // 不用了
     return JavascriptChannel( // 接收來自 javascript
       name: 'Flutter',

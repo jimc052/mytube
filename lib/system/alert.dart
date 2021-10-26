@@ -110,7 +110,10 @@ void alert(BuildContext context, String msg, {String title = "", List<dynamic>? 
     barrierDismissible: false,
     context: context, 
     builder: (BuildContext context) {
-      return dialog;
+      return WillPopScope(
+        onWillPop: () async => false,
+        child:  dialog
+      );
     } 
   );
 }

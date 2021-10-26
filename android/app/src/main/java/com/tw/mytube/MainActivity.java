@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
@@ -51,6 +52,7 @@ public class MainActivity extends FlutterActivity {
   public static final String ACTION_PREV = "action.PREV";
   private static final String CHANNEL = "media_notification";
   public static NotificationManager mNM;
+  public static String versionName = "";
   String path = "";
   MethodChannel.Result _result;
 
@@ -72,6 +74,13 @@ public class MainActivity extends FlutterActivity {
     registerReceiver(headsetReceiver, filter);
     mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
     createNotificationChannel();
+
+    try {
+      PackageInfo pInfo = this.getPackageManager().getPackageInfo(this.getPackageName(), 0);
+      versionName = pInfo.versionName;
+    } catch (PackageManager.NameNotFoundException e) {
+      e.printStackTrace();
+    }
   }
   MethodChannel.MethodCallHandler mMethodHandle = new MethodChannel.MethodCallHandler() {
     @Override
@@ -94,6 +103,8 @@ public class MainActivity extends FlutterActivity {
         finish();
       } else if (call.method.equals("getDownloadsDirectory")) {
           result.success(getDownloadsDirectory());
+      } else if (call.method.equals("getVersionName")) {
+        result.success(versionName);
       } else
         result.notImplemented();
     }
