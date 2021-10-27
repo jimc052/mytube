@@ -8,6 +8,7 @@ import 'dart:io' show Platform;
 import 'package:mytube/youtube.dart';
 import 'package:mytube/system/system.dart';
 import 'package:device_info/device_info.dart';
+import 'package:mytube/download.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -20,7 +21,8 @@ class _HomeState extends State<Home> {
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
   final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer, url = "https://m.youtube.com", permission = false;
-  String currentURL = "", versionName = "";
+  String currentURL = "", versionName = "", playItem = "";
+  List<ListTile> list = [];
 
   @override
   void initState() {
@@ -49,14 +51,65 @@ class _HomeState extends State<Home> {
     if(Platform.isAndroid) {
       new Future.delayed(const Duration(milliseconds: 100), () {
         _requestPermissions().then((permission) async {
-          this.permission = permission;
-          this.setState(() {});
+          inital(permission);
         });
       });      
     } else {
-      this.permission = true;
-      this.setState(() {});
+      inital(true);
     }
+  }
+
+  inital(bool permission) async {
+    this.permission = permission;
+    playItem = await Storage.getString("playItem");
+    if(playItem.length == 0) playItem = "YouTube";
+    print("MyTube.playItem: $playItem");
+    await readMenuList();
+    this.setState(() {
+
+    });
+  }
+
+  readMenuList() async {
+    list = [];
+    
+    list.add(
+      ListTile(
+        title: Text('YouTube',
+          style: TextStyle(
+            // color: Colors.red,
+            fontSize: 20,
+          ),
+        ),
+        onTap: () async {
+          await Storage.setString("playItem", "YouTube");
+          Navigator.pop(context);
+        },
+        // subtitle: _act != 2 ? const Text('The airplane is only in Act II.') : null,
+        // enabled: _act == 2,
+        selected: playItem == "YouTube" ? true : false ,
+        // leading: const Icon(Icons.flight_land),
+      )
+    );
+
+    Map<String, dynamic> playlist = await Download.getPlaylist();
+    playlist.forEach((k, v) {
+      list.add(
+        ListTile(
+          title: Text(k,
+            style: TextStyle(
+              // color: Colors.red,
+              fontSize: 20,
+            ),
+          ),
+          onTap: () async {
+            await Storage.setString("playItem", k);
+            Navigator.pop(context);
+          },
+          selected: playItem == k ? true : false ,
+        )
+      );
+    });
   }
 
   Future<bool> _requestPermissions() async {
@@ -105,7 +158,9 @@ class _HomeState extends State<Home> {
           drawer: Drawer(
             child: createMenu(),
           ),
-          body: this.permission == true ? createWeb() : null,
+          body: this.permission == true 
+            ? (playItem == "YouTube" ? createWeb() : creatPlayer())
+            : null,
         ),
       )
     );
@@ -194,26 +249,12 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget createListView(){
-    List<ListTile> list = [];
-    list.add(
-      ListTile(
-        title: Text('YouTube',
-          style: TextStyle(
-            // color: Colors.red,
-            fontSize: 20,
-          ),
-        ),
-        onTap: () { 
-          Navigator.pop(context);
-        }
-        // subtitle: _act != 2 ? const Text('The airplane is only in Act II.') : null,
-        // enabled: _act == 2,
-        // selected: true,
-        // leading: const Icon(Icons.flight_land),
-      )
-    );
+  Widget creatPlayer(){
 
+    return Text(playItem);
+  }
+
+  Widget createListView(){
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: list.length,
@@ -282,17 +323,21 @@ class _HomeState extends State<Home> {
   }
 
   openVideo(href) async {
-    await Storage.setString("watchID", href);
-    print("MyTube.openVideo: $href");
-    this.webViewController!.readAnchor(false);
-    showDialog(
-      context: context,
-      builder: (_) {
-        return Video(url: url + href); 
-      }
-    ).then((valueFromDialog) async {
-      await Storage.setString("watchID", "");
-      this.webViewController!.readAnchor(true);
-    });
+    if(this.webViewController != null) {
+      await Storage.setString("watchID", href);
+      print("MyTube.openVideo: $href");
+      this.webViewController!.readAnchor(false);
+      showDialog(
+        context: context,
+        builder: (_) {
+          return Video(url: url + href); 
+        }
+      ).then((valueFromDialog) async {
+        await Storage.setString("watchID", "");
+        this.webViewController!.readAnchor(true);
+        await readMenuList();
+        this.setState(() {});
+      });
+    }
   }
 }

@@ -23,6 +23,7 @@ import org.json.JSONObject;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -102,7 +103,9 @@ public class MainActivity extends FlutterActivity {
         result.success("OK"); // call.argument("path")));
         finish();
       } else if (call.method.equals("getDownloadsDirectory")) {
-          result.success(getDownloadsDirectory());
+        String path = MainApplication.rootPath();
+        createFolder(path);
+        result.success(path);
       } else if (call.method.equals("getVersionName")) {
         result.success(versionName);
       } else
@@ -110,8 +113,25 @@ public class MainActivity extends FlutterActivity {
     }
   };
 
-  private String getDownloadsDirectory() {
+  private String getDownloadsDirectory() { //
     return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
+  }
+
+//
+  private void createFolder(String path) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      File tDataPath = new File(path);
+      //識別指定的目錄是否存在，false則建立；
+      if (tDataPath.exists() == false) {
+        tDataPath.mkdir();
+      }
+    } else {
+      File tDataPath = new File(path);
+      //識別指定的目錄是否存在，false則建立；
+      if (tDataPath.exists() == false) {
+        tDataPath.mkdir();
+      }
+    }
   }
 
   EventChannel.StreamHandler mEnventHandle = new EventChannel.StreamHandler() {

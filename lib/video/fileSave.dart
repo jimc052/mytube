@@ -22,12 +22,12 @@ class Panel extends StatefulWidget {
 }
 
 class _PanelState extends State<Panel> {
-  String path = "", activeFolder= "";
+  String path = "", activeFolder= "", activeFileName = "";
   final TextEditingController textEditingControllerF = new TextEditingController();
   final TextEditingController textEditingControllerD = new TextEditingController();
   final scrollController = ScrollController();
   bool saved = false, exists = false;
-  var dialogContext, filePlayList;
+  var dialogContext;
   var background = Color.fromRGBO(38, 38, 38, 0.8);
   Map<String, dynamic> playlist = {};
 
@@ -41,17 +41,15 @@ class _PanelState extends State<Panel> {
     super.didChangeDependencies();
     if(path.length == 0){
       path = await Download.folder();
-      filePlayList = File(path + "/playlist.txt");
-      if(filePlayList.existsSync() == true){
-        final content = filePlayList.readAsStringSync();
-        playlist = jsonDecode(content);
-      }
+      playlist = await Download.getPlaylist();
+     
       playlist.forEach((k, v) {
         print("MyTube.playlist: ${k}");
         if(exists == false) {
           for(var i = 0; i < v.length; i++) {
             if(v[i]["key"] == this.widget.videoKey){
               activeFolder = k;
+              activeFileName = v[i]["fileName"];
               exists = true;
               break;
             }
@@ -112,7 +110,7 @@ class _PanelState extends State<Panel> {
         ),
       ),
       body: body(),
-      floatingActionButton: saved == false
+      floatingActionButton: saved == false && exists == false
         ? FloatingActionButton(
             backgroundColor: Colors.black87,
             onPressed: () async {
@@ -150,7 +148,7 @@ class _PanelState extends State<Panel> {
           playlist[textEditingControllerD.text] = [];
         }
         playlist[textEditingControllerD.text].add(list);
-        filePlayList.writeAsStringSync(jsonEncode(playlist));
+        Download.setPlaylist(playlist);
       } else {
         alert(context, "檔案已存在!!");
       }
@@ -291,6 +289,7 @@ class _PanelState extends State<Panel> {
   
   Widget widgetFile(String name){
     var arr = name.split("/");
+    bool e = activeFileName == arr[arr.length - 1];
     return Container(
       decoration: BoxDecoration(
         color: Colors.transparent,
@@ -300,7 +299,7 @@ class _PanelState extends State<Panel> {
         children: [
           Icon(
             Icons.insert_drive_file,
-            color: Colors.grey[400],
+            color: e == true ? Colors.orange[200] : Colors.grey[400],
             size: 20,
           ),
           Padding(padding: EdgeInsets.only(right: 5)),
@@ -309,7 +308,7 @@ class _PanelState extends State<Panel> {
               child: Text(arr[arr.length - 1],
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.grey[400],
+                  color: e == true ? Colors.orange[200] : Colors.grey[400],
                   fontSize: 20,
                 ),
               )
