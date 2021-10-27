@@ -2,32 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:mytube/download.dart';
 import 'dart:io';
 import 'package:mytube/system/system.dart';
+import 'dart:convert';
+import 'package:mytube/extension/extension.dart';
 
-void fileSave(BuildContext context) {
+void fileSave(BuildContext context, {String videoKey = "", String fileName = "", required String title, required String author}) {
   showDialog(
     barrierDismissible: false,
     context: context, 
-    builder: (BuildContext context) => Panel(),
+    builder: (BuildContext context) => Panel(videoKey: videoKey, fileName: fileName, title: title, author: author),
   );
 }
 
 class Panel extends StatefulWidget {
-  String url;
-  bool isLocal = false;
-  Panel({Key? key, this.url = "", isLocal = false}) : super(key: key);
+  String videoKey, fileName, title, author;
+  Panel({Key? key, required this.videoKey, this.fileName = "", required this.title, required this.author}) : super(key: key);
 
   @override
   _PanelState createState() => _PanelState();
 }
 
 class _PanelState extends State<Panel> {
-  String path = "", title = "", _folder = "", fileName = "", activeFolder= "";
+  String path = "", activeFolder= "";
   final TextEditingController textEditingControllerF = new TextEditingController();
   final TextEditingController textEditingControllerD = new TextEditingController();
   final scrollController = ScrollController();
-  bool saved = false;
-  var dialogContext;
+  bool saved = false, exists = false;
+  var dialogContext, filePlayList;
   var background = Color.fromRGBO(38, 38, 38, 0.8);
+  Map<String, dynamic> playlist = {};
 
   @override
   void initState() {
@@ -39,18 +41,28 @@ class _PanelState extends State<Panel> {
     super.didChangeDependencies();
     if(path.length == 0){
       path = await Download.folder();
-      fileName = await Storage.getString("fileName");
-       /*
-        download.title = await Storage.getString("title");
-        download.author = await Storage.getString("author");
-        download.mb = await Storage.getString("mb");
-        download.duration = Duration(milliseconds: await Storage.getInt("duration"));
-      */
-
-      textEditingControllerF.text = title = trimChar(await Storage.getString("title"));
-      textEditingControllerD.text = _folder = trimChar(await Storage.getString("author"));
-      setState(() {
+      filePlayList = File(path + "/playlist.txt");
+      if(filePlayList.existsSync() == true){
+        final content = filePlayList.readAsStringSync();
+        playlist = jsonDecode(content);
+      }
+      playlist.forEach((k, v) {
+        print("MyTube.playlist: ${k}");
+        if(exists == false) {
+          for(var i = 0; i < v.length; i++) {
+            if(v[i]["key"] == this.widget.videoKey){
+              activeFolder = k;
+              exists = true;
+              break;
+            }
+          }
+        }
       });
+      if(exists == false) {
+        textEditingControllerF.text = trimChar(this.widget.title);
+        textEditingControllerD.text = trimChar(this.widget.author);
+      }
+      setState(() {}); 
     }
   }
 
@@ -122,15 +134,23 @@ class _PanelState extends State<Panel> {
       if(Directory(path2).existsSync() == false)
         Directory(path2).createSync();
 
-      var file = File(fileName);
-      String ext = fileName.substring(fileName.indexOf(".", fileName.length - 7));
+      var file = File(this.widget.fileName);
+      String ext = this.widget.fileName.substring(this.widget.fileName.indexOf(".", this.widget.fileName.length - 7));
       String f2 = path2 + "/" + textEditingControllerF.text + ext;
       var file2 = File(f2);
       if(file2.existsSync() == false){
-        file.copySync(path2 + "/" + textEditingControllerF.text + ext);
+        file.copySync(f2);
         alert(context, "存檔完成!!");
         saved = true;
         setState(() {});
+        final DateTime now = DateTime.now();
+        PlayList list = PlayList(this.widget.videoKey, this.widget.title, this.widget.author, now.formate(), 
+          textEditingControllerF.text + ext);
+        if(! playlist.containsKey(textEditingControllerD.text)) {
+          playlist[textEditingControllerD.text] = [];
+        }
+        playlist[textEditingControllerD.text].add(list);
+        filePlayList.writeAsStringSync(jsonEncode(playlist));
       } else {
         alert(context, "檔案已存在!!");
       }
@@ -145,7 +165,7 @@ class _PanelState extends State<Panel> {
       ),
       child: Column(
         children:  [
-          if(saved == false)
+          if(saved == false && exists == false)
             Row(children: [
               Flexible(child: TextField(
                   style: TextStyle(color: Colors.orange),
@@ -174,15 +194,15 @@ class _PanelState extends State<Panel> {
               // Container(width: 5),
               myButton(Icons.undo, 
                 onPress:(){
-                  textEditingControllerF.text = title;
+                  textEditingControllerF.text = trimChar(this.widget.title);
                   setState(() {});
                 }, 
-                disable: textEditingControllerF.text == title
+                disable: textEditingControllerF.text == trimChar(this.widget.title)
               )
             ]),
-          if(saved == false) 
+          if(saved == false && exists == false) 
             Container(height: 5),
-          if(saved == false)
+          if(saved == false && exists == false)
             Row(children: [
               Flexible(child: TextField(
                   style: TextStyle(color: Colors.orange),
@@ -211,10 +231,10 @@ class _PanelState extends State<Panel> {
               // Container(width: 5),
               myButton(Icons.undo, 
                 onPress: (){
-                  textEditingControllerD.text = _folder;
+                  textEditingControllerD.text = trimChar(this.widget.author);
                   setState(() {});
                 }, 
-                disable: textEditingControllerD.text == _folder
+                disable: textEditingControllerD.text == trimChar(this.widget.author)
               )
             ]),
           if(path.length > 0)
@@ -236,9 +256,13 @@ class _PanelState extends State<Panel> {
       List f1 = Directory(folder).listSync();
       List f2 = [], d = []; 
       for(int i = 0; i < f1.length; i++) {
-        if(f1[i] is File)
-          f2.add(f1[i]);
-        else 
+        if(f1[i] is File) {
+          var s = (f1[i] as File).path;
+          if(s.indexOf("/youtube.") > -1 || s.indexOf(".txt") > -1 || s.indexOf(".json") > -1) {
+            continue;
+          } else 
+            f2.add(f1[i]);
+        } else 
           d.add(f1[i]);
       }
 
@@ -266,6 +290,7 @@ class _PanelState extends State<Panel> {
   }
   
   Widget widgetFile(String name){
+    var arr = name.split("/");
     return Container(
       decoration: BoxDecoration(
         color: Colors.transparent,
@@ -281,7 +306,7 @@ class _PanelState extends State<Panel> {
           Padding(padding: EdgeInsets.only(right: 5)),
           Flexible(child: Container(
               padding: new EdgeInsets.only(right: 13.0),
-              child: Text(name.replaceAll(path + "/", ""),
+              child: Text(arr[arr.length - 1],
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.grey[400],
@@ -296,6 +321,7 @@ class _PanelState extends State<Panel> {
   }
   
   Widget widgetDirectory(String name){
+    bool same = name.replaceAll(path + "/", "") == activeFolder.replaceAll(path + "/", "");
     return Column(children: [
       Material(
       color: Colors.transparent,
@@ -313,14 +339,14 @@ class _PanelState extends State<Panel> {
           padding: EdgeInsets.all(10),
           child: Row(
             children: [
-              Icon(activeFolder == name ? Icons.folder_open : Icons.folder,
-                color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
+              Icon(same == true ? Icons.folder_open : Icons.folder,
+                color: same == true ? Colors.orange : Colors.grey.shade400,
                 size: 20
               ),
               Padding(padding: EdgeInsets.only(right: 5)),
               Text(name.replaceAll(path + "/", ""),
                 style: TextStyle(
-                  color: activeFolder == name ? Colors.orange : Colors.grey.shade400,
+                  color: same == true ? Colors.orange : Colors.grey.shade400,
                   fontSize: 20,
                 ),
               )
@@ -329,7 +355,7 @@ class _PanelState extends State<Panel> {
         )
       )
     ),
-    if(activeFolder == name)
+    if(same == true)
         Container(
           child: fileList(name),
           margin: EdgeInsets.only(left: 15.0),
@@ -371,4 +397,25 @@ class _PanelState extends State<Panel> {
       )
     );
   }
+}
+
+class PlayList {
+  String key, title, author, fileName, date;
+
+  PlayList(this.key, this.title, this.author, this.date, this.fileName);
+
+  PlayList.fromJson(Map<String, dynamic> json)
+      : key = json['key'],
+        title = json['title'],
+        author = json["author"],
+        date = json["date"],
+        fileName = json["fileName"];
+
+  Map<String, dynamic> toJson() => {
+    "key": key,
+    "title": title,
+    "author": author,
+    "date": date,
+    "fileName": fileName
+  };
 }

@@ -33,7 +33,7 @@ class _PlayerState extends State<Player> {
   void initState() {
     super.initState();
     download = new Download();
-    videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
+    videoKey = Download.parselKey(this.widget.url);
   }
 
   @override
@@ -53,7 +53,6 @@ class _PlayerState extends State<Player> {
         processing = 100;
         setState(() {});
       } else {
-        var videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
         String s = await Storage.getString("historys");
         if(s.length > 0) {
           historys = jsonDecode(s);
@@ -109,16 +108,6 @@ class _PlayerState extends State<Player> {
   @override
   void reassemble() async {
     super.reassemble();
-    // var videoKey = this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "");
-    // String s = await Storage.getString("historys");
-    // if(s.length > 0) {
-    //   historys = jsonDecode(s);
-    // }
-    // if(historys.containsKey(videoKey)) {
-    //   Map<String, dynamic> history = jsonDecode(historys[videoKey]);
-    //   // print("MyTube.historys: ${historys[videoKey]}"); 
-    //   print("MyTube.historys.String: ${history['title']}");
-    // }
   }
 
   Future<void> getStream() async {
@@ -260,7 +249,12 @@ class _PlayerState extends State<Player> {
                       padding: MaterialStateProperty.all(EdgeInsets.symmetric(horizontal: 15, vertical:  height > 800 ? 10 : 5))
                     ),
                     onPressed: () async {
-                      fileSave(context); 
+                      fileSave(context, 
+                        videoKey: videoKey,
+                        fileName: download.fileName,
+                        title: download.title, 
+                        author: download.author
+                      ); 
                     },
                   )
               ]),

@@ -29,6 +29,11 @@ class Download {
     return directory + '/MyTube';
   }
 
+  static parselKey(String key){
+    return key.replaceAll("https://m.youtube.com/watch?v=", "");
+  }
+
+
   Future<void> initial(String url) async {
     this.url = url;
     try {
