@@ -142,8 +142,14 @@ class _PanelState extends State<Panel> {
         saved = true;
         setState(() {});
         final DateTime now = DateTime.now();
-        PlayList list = PlayList(this.widget.videoKey, this.widget.title, this.widget.author, now.formate(), 
-          textEditingControllerF.text + ext);
+        // this.key, this.title, this.author, this.date, this.fileName
+        var list ={
+          "key": this.widget.videoKey, 
+          "title": this.widget.title, 
+          "author": this.widget.author, 
+          "date": now.formate(), 
+          "fileName": textEditingControllerF.text + ext
+        };
         if(! playlist.containsKey(textEditingControllerD.text)) {
           playlist[textEditingControllerD.text] = [];
         }
@@ -398,23 +404,23 @@ class _PanelState extends State<Panel> {
   }
 }
 
-class PlayList {
-  String key, title, author, fileName, date;
+// class PlayList {
+//   String key, title, author, fileName, date;
 
-  PlayList(this.key, this.title, this.author, this.date, this.fileName);
+//   PlayList(this.key, this.title, this.author, this.date, this.fileName);
 
-  PlayList.fromJson(Map<String, dynamic> json)
-      : key = json['key'],
-        title = json['title'],
-        author = json["author"],
-        date = json["date"],
-        fileName = json["fileName"];
+//   PlayList.fromJson(Map<String, dynamic> json)
+//       : key = json['key'],
+//         title = json['title'],
+//         author = json["author"],
+//         date = json["date"],
+//         fileName = json["fileName"];
 
-  Map<String, dynamic> toJson() => {
-    "key": key,
-    "title": title,
-    "author": author,
-    "date": date,
-    "fileName": fileName
-  };
-}
+//   Map<String, dynamic> toJson() => {
+//     "key": key,
+//     "title": title,
+//     "author": author,
+//     "date": date,
+//     "fileName": fileName
+//   };
+// }

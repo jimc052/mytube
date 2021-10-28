@@ -98,8 +98,6 @@ class Download {
   Future<void> execute({String fileName = "", String folder = "", required Function(int) onProcessing}) async {
     stop = false;
     try {
-      // print("MyTube.audio: ${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}, videoQualityLabel: ${audio.videoQualityLabel}, videoQuality: ${audio.videoQuality}, videoCodec: ${audio.videoCodec}, audioCodec: ${audio.audioCodec}");
-      // print("MyTube.container: " + audio.container.name.toString());
       mb = "${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}";
       fileName = ((fileName.length == 0) ? 'youtube' : fileName) 
         + '.${audio.container.name.toString()}';
@@ -155,10 +153,11 @@ class Download {
   }
   removeFile(){
     var file = File(this.fileName);
-    if(fileName.indexOf("youtube.") == 0) {
+    if(fileName.indexOf("youtube.") > -1) {
       List f1 = ['3gpp', 'webm', 'mp4'];
       for(var i = 0; i < f1.length; i++) {
-        var f2 = File(path + '/$folder/' + 'youtube.' + f1[i]);
+        String fn = path + '/' + 'youtube.' + f1[i]; // /$folder
+        var f2 = File(fn);
         if (f2.existsSync()) {
           f2.deleteSync();
         }
