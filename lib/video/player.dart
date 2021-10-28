@@ -77,7 +77,8 @@ class _PlayerState extends State<Player> {
           Map<String, dynamic> history = jsonDecode(historys[videoKey]);
           var title = '''${history['title']}''';
           if(title.length > 30) title = title.substring(0, 30) + "...";
-          alert(context, '''標題：$title\n\n觀看時間：${history['date']}\n\n是否確定再次觀看???''',
+          if(processing != -9999)
+            alert(context, '''標題：$title\n\n觀看時間：${history['date']}\n\n是否確定再次觀看???''',
             title: "觀看記錄",
             actions: [{"text": "取消", 
                 "onPressed": (){
@@ -94,12 +95,14 @@ class _PlayerState extends State<Player> {
       }
     } catch(e) {
       print("MyTube.player: $e");
-      alert(context, e.toString());
+      if(processing != -9999)
+        alert(context, e.toString());
     }
   }
 
   @override
   dispose() {
+    processing = -9999;
     download.stop = true;
     download.dispose();
     Fluttertoast.cancel();

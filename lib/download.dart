@@ -21,9 +21,9 @@ class Download {
   Mode mode = Mode.none;
   var audio, streams;
 
-  String get key {
-    return url.replaceAll("https://m.youtube.com/watch?v=", "");
-  }
+  // String get key {
+  //   return url.replaceAll("https://m.youtube.com/watch?v=", "");
+  // }
 
   static Future<String> folder() async {
     final methodChannel = const MethodChannel('com.flutter/MethodChannel');

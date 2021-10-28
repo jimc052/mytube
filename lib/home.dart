@@ -62,12 +62,10 @@ class _HomeState extends State<Home> {
   inital(bool permission) async {
     this.permission = permission;
     playItem = await Storage.getString("playItem");
-    if(playItem.length == 0) playItem = "YouTube";
-    print("MyTube.playItem: $playItem");
-    await readMenuList();
-    this.setState(() {
+    if(playItem.length == 0)  playItem = "YouTube";
 
-    });
+    await readMenuList();
+    this.setState(() {});
   }
 
   readMenuList() async {
@@ -82,7 +80,13 @@ class _HomeState extends State<Home> {
           ),
         ),
         onTap: () async {
-          await Storage.setString("playItem", "YouTube");
+          currentURL = "";
+          if(playItem == "YouTube") {
+            this.webViewController!.reload();
+          } else {
+            playItem = "YouTube";
+            await Storage.setString("playItem", "YouTube");
+          }
           Navigator.pop(context);
         },
         // subtitle: _act != 2 ? const Text('The airplane is only in Act II.') : null,
@@ -168,10 +172,10 @@ class _HomeState extends State<Home> {
   
   Future<bool> _onWillPop() async {
     String currenturl = (await this.webViewController!.currentUrl()).toString();
-    // print("MyTube.onWillPop.currentUrl: $currenturl");
+    print("MyTube.onWillPop.currentUrl: $currenturl");
 
     if (this.webViewController != null && currenturl != url + "/") {
-      if(currenturl.indexOf("list=") > -1 || currenturl.indexOf("/feed/") > -1 || currenturl.indexOf("/user/") > -1) 
+      if(currenturl.indexOf("list=") > -1 || currenturl.indexOf("/feed/") > -1 || currenturl.indexOf("/user/") > -1 || currenturl.indexOf("/channel/") > -1) 
         this.webViewController!.goBack();
       else if(currenturl.indexOf("/playlists") > -1 || currenturl.indexOf("/videos") > -1 || currenturl.indexOf("/featured") > -1) 
         this.webViewController!.goBack();
@@ -201,12 +205,14 @@ class _HomeState extends State<Home> {
               this.webViewController!.setAnchorClick("a.large-media-item-thumbnail-container");
             } else if(url.indexOf("/feed/subscriptions") > -1) {
               this.webViewController!.setAnchorClick(".item a"); // compact-media-item
+            } else if(url.indexOf("/channel/") > -1) {
+              this.webViewController!.setAnchorClick(".item a");
             } else if(url.indexOf("/user/") > -1) {
               this.webViewController!.setAnchorClick(".compact-media-item a"); // 
             } else if(url.indexOf("playlist?list=") > -1) {
               this.webViewController!.setAnchorClick("a.compact-media-item-image"); 
             } else if(url.indexOf("#") > -1){
-            } else if(url.indexOf("/feed/library") > -1) {
+            } else if(url.indexOf("/feed/library") > -1 || url.indexOf("/feed/channels") > -1) {
               this.webViewController!.readAnchor(false);
               this.webViewController!.clearIntervalAD();
             } else if(url.indexOf("/watch?") > -1) {
@@ -322,8 +328,12 @@ class _HomeState extends State<Home> {
       });
   }
 
-  openVideo(href) async {
-    if(this.webViewController != null) {
+  openVideo(String href) async {
+    this.webViewController!.clearIntervalAD();
+    if(href.indexOf("/watch?") == -1) {
+      print("MyTube.openVideo.reload: $href");
+      this.webViewController!.loadUrl(url + href);
+    } else if(this.webViewController != null) {
       await Storage.setString("watchID", href);
       print("MyTube.openVideo: $href");
       this.webViewController!.readAnchor(false);
@@ -335,6 +345,7 @@ class _HomeState extends State<Home> {
       ).then((valueFromDialog) async {
         await Storage.setString("watchID", "");
         this.webViewController!.readAnchor(true);
+        this.webViewController!.clearIntervalAD();
         await readMenuList();
         this.setState(() {});
       });

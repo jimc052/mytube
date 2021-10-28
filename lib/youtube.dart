@@ -59,7 +59,7 @@ extension MyWebController on WebViewController {
         let xx = document.querySelectorAll("$cls");
         xx.forEach((item, index) =>{
           let href = item.getAttribute("href");
-          if(href.indexOf("javascr") == -1) {
+          if(href != null && href.indexOf("javascr") == -1) {
             if(index == 2) console.log(href)
             item.setAttribute("href", "javascript:void(0);");
             item.setAttribute("_href", href);
