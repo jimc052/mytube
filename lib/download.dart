@@ -2,7 +2,6 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/services.dart';
-
 import 'dart:convert';
 //https://pub.dev/packages/youtube_explode_dart
 
@@ -29,24 +28,6 @@ class Download {
     final methodChannel = const MethodChannel('com.flutter/MethodChannel');
     String directory = await methodChannel.invokeMethod('getDownloadsDirectory');
     return directory;
-  }
-
-  static Future<Map<String, dynamic>> getPlaylist() async {
-    Map<String, dynamic> playlist = {};
-    String path = await Download.folder();
-    var filePlayList = File(path + "/playlist.txt");
-    if(filePlayList.existsSync() == true){
-      final content = filePlayList.readAsStringSync();
-      playlist = jsonDecode(content);
-    }
-    return playlist;
-  }
-
-  static Future<void> setPlaylist(Map<String, dynamic> playlist) async {
-    String path = await Download.folder();
-    var filePlayList = File(path + "/playlist.txt");
-    filePlayList.writeAsStringSync(jsonEncode(playlist));
-    return;
   }
 
   static parselKey(String key){

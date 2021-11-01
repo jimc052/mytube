@@ -8,7 +8,7 @@ import 'dart:io' show Platform;
 import 'package:mytube/youtube.dart';
 import 'package:mytube/system/system.dart';
 import 'package:device_info/device_info.dart';
-import 'package:mytube/download.dart';
+import 'package:mytube/system/playlist.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -22,7 +22,8 @@ class _HomeState extends State<Home> {
   final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer, url = "https://m.youtube.com", permission = false;
   String currentURL = "", versionName = "", playItem = "";
-  List<ListTile> list = [];
+  List<ListTile> menuList = [];
+  Playlist playlist = Playlist();
 
   @override
   void initState() {
@@ -63,15 +64,15 @@ class _HomeState extends State<Home> {
     this.permission = permission;
     playItem = await Storage.getString("playItem");
     if(playItem.length == 0)  playItem = "YouTube";
-
+    await playlist.initial();
     await readMenuList();
     this.setState(() {});
   }
 
   readMenuList() async {
-    list = [];
+    menuList = [];
     
-    list.add(
+    menuList.add(
       ListTile(
         title: Text('YouTube',
           style: TextStyle(
@@ -80,14 +81,16 @@ class _HomeState extends State<Home> {
           ),
         ),
         onTap: () async {
+          Navigator.pop(context);
           currentURL = "";
           if(playItem == "YouTube") {
             this.webViewController!.reload();
           } else {
             playItem = "YouTube";
             await Storage.setString("playItem", "YouTube");
+            setState(() { });
+            readMenuList();
           }
-          Navigator.pop(context);
         },
         // subtitle: _act != 2 ? const Text('The airplane is only in Act II.') : null,
         // enabled: _act == 2,
@@ -96,9 +99,8 @@ class _HomeState extends State<Home> {
       )
     );
 
-    Map<String, dynamic> playlist = await Download.getPlaylist();
-    playlist.forEach((k, v) {
-      list.add(
+    playlist.data.forEach((k, v) {
+      menuList.add(
         ListTile(
           title: Text(k,
             style: TextStyle(
@@ -108,6 +110,9 @@ class _HomeState extends State<Home> {
           ),
           onTap: () async {
             await Storage.setString("playItem", k);
+            playItem = k;
+            readMenuList();
+            setState(() { });
             Navigator.pop(context);
           },
           selected: playItem == k ? true : false ,
@@ -145,6 +150,7 @@ class _HomeState extends State<Home> {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
+    // playItem = "YouTube";
   }
   @override
   dispose() {
@@ -158,12 +164,12 @@ class _HomeState extends State<Home> {
         child: Container(
             padding: EdgeInsets.only(top: 24.0),
             child: Scaffold(
-          appBar: null, // AppBar(title: Text("MyTube")),
+          appBar: playItem == "YouTube" ? null : AppBar(title: Text(playItem)), // AppBar(title: Text("MyTube")),
           drawer: Drawer(
             child: createMenu(),
           ),
           body: this.permission == true 
-            ? (playItem == "YouTube" ? createWeb() : creatPlayer())
+            ? (playItem == "YouTube" ? createWeb() : creatPlayList())
             : null,
         ),
       )
@@ -255,23 +261,35 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget creatPlayer(){
-
-    return Text(playItem);
-  }
-
-  Widget createListView(){
+  Widget creatPlayList(){
+    var data = playlist.data[playItem];
     return ListView.separated(
       padding: EdgeInsets.zero,
-      itemCount: list.length,
+      itemCount: data.length,
       itemBuilder: (context, index) {
-        return list[index];
+        return  ListTile(
+          title: Text(data[index]["title"],
+            style: TextStyle(
+              // color: Colors.red,
+              fontSize: 20,
+            ),
+          ),
+          onTap: () async {
+            // await Storage.setString("playItem", k);
+            // playItem = k;
+            // readMenuList();
+            // setState(() { });
+            // Navigator.pop(context);
+          },
+          selected: data[index]["active"] is bool && data[index]["active"] == true ? true : false ,
+        );
       },
       separatorBuilder: (context, index) {
         return Divider();
-      },
+      }
     );
   }
+
   Widget createMenu(){
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -293,7 +311,16 @@ class _HomeState extends State<Home> {
         ),
         Expanded(
           flex: 1,
-          child: createListView()
+          child: ListView.separated(
+            padding: EdgeInsets.zero,
+            itemCount: menuList.length,
+            itemBuilder: (context, index) {
+              return menuList[index];
+            },
+            separatorBuilder: (context, index) {
+              return Divider();
+            },
+          )
         ),
         Container(
           padding: EdgeInsets.all(10.0),
@@ -305,13 +332,19 @@ class _HomeState extends State<Home> {
             // bottom: BorderSide(width: 16.0, color: Colors.lightBlue.shade900),
           ),
           width: double.infinity,
-          child: Text("by Jim Chen \n $versionName",
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
+          child: Row(children: [
+            Expanded(
+              child: Container(),
+              flex: 1
             ),
-          )
+            Text("by Jim Chen \n $versionName",
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            )
+          ])
         ),
       ]
     );
@@ -346,6 +379,7 @@ class _HomeState extends State<Home> {
         await Storage.setString("watchID", "");
         this.webViewController!.readAnchor(true);
         this.webViewController!.clearIntervalAD();
+        await playlist.initial();
         await readMenuList();
         this.setState(() {});
       });

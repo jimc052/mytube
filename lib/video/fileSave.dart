@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:mytube/system/system.dart';
 import 'dart:convert';
 import 'package:mytube/extension/extension.dart';
+import 'package:mytube/system/playlist.dart';
 
 void fileSave(BuildContext context, {String videoKey = "", String fileName = "", required String title, required String author}) {
   showDialog(
@@ -29,7 +30,7 @@ class _PanelState extends State<Panel> {
   bool saved = false, exists = false;
   var dialogContext;
   var background = Color.fromRGBO(38, 38, 38, 0.8);
-  Map<String, dynamic> playlist = {};
+  Playlist playlist = Playlist();
 
   @override
   void initState() {
@@ -41,9 +42,9 @@ class _PanelState extends State<Panel> {
     super.didChangeDependencies();
     if(path.length == 0){
       path = await Download.folder();
-      playlist = await Download.getPlaylist();
+      await playlist.initial();
      
-      playlist.forEach((k, v) {
+      playlist.data.forEach((k, v) {
         print("MyTube.playlist: ${k}");
         if(exists == false) {
           for(var i = 0; i < v.length; i++) {
@@ -138,7 +139,7 @@ class _PanelState extends State<Panel> {
       var file2 = File(f2);
       if(file2.existsSync() == false){
         file.copySync(f2);
-        alert(context, "存檔完成!!");
+        
         saved = true;
         setState(() {});
         final DateTime now = DateTime.now();
@@ -150,11 +151,13 @@ class _PanelState extends State<Panel> {
           "date": now.formate(), 
           "fileName": textEditingControllerF.text + ext
         };
-        if(! playlist.containsKey(textEditingControllerD.text)) {
-          playlist[textEditingControllerD.text] = [];
-        }
-        playlist[textEditingControllerD.text].add(list);
-        Download.setPlaylist(playlist);
+        // if(! playlist.containsKey(textEditingControllerD.text)) {
+        //   playlist[textEditingControllerD.text] = [];
+        // }
+        // playlist[textEditingControllerD.text].add(list);
+        // Download.setPlaylist(playlist);
+        playlist.add(textEditingControllerD.text, list);
+        alert(context, "存檔完成!!");
       } else {
         alert(context, "檔案已存在!!");
       }
