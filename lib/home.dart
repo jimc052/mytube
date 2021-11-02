@@ -21,7 +21,7 @@ class _HomeState extends State<Home> {
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
   final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer, url = "https://m.youtube.com", permission = false;
-  String currentURL = "", versionName = "", playItem = "";
+  String currentURL = "", versionName = "", playItem = "", operation = "";
   List<ListTile> menuList = [];
   Playlist playlist = Playlist();
 
@@ -70,6 +70,7 @@ class _HomeState extends State<Home> {
   }
 
   readMenuList() async {
+    operation = "";
     menuList = [];
     
     menuList.add(
@@ -140,7 +141,7 @@ class _HomeState extends State<Home> {
     if(androidInfo.model == "V2") watchID = "/watch?v=ZqcIgCDWtGs";
     // watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
     // watchID = "/watch?v=iP8SqetfseI"; // test, 如實記
-    if(watchID.length > 0 && Platform.isAndroid){
+    if(playItem == "YouTube" && Platform.isAndroid && watchID.length > 0){
       new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
         openVideo(watchID); // "/watch?v=sTjJ1LlviKM");
       });
@@ -164,7 +165,42 @@ class _HomeState extends State<Home> {
         child: Container(
             padding: EdgeInsets.only(top: 24.0),
             child: Scaffold(
-          appBar: playItem == "YouTube" ? null : AppBar(title: Text(playItem)), // AppBar(title: Text("MyTube")),
+          appBar: playItem == "YouTube" ? null : AppBar(title: Text(playItem), 
+            actions: [
+              if(operation == "delete") // 確定刪除
+              IconButton(
+                icon: Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                ),
+                onPressed: () { 
+                  var data = playlist.data[playItem] as List;
+                  for(var i = data.length - 1; i >= 0; i--) {
+                    if(data[i]["delete"] == true)
+                      data.removeAt(i);
+                  }
+                  playlist.save();
+                  operation = "";
+                  setState(() { });
+                },
+              ),
+              if(operation == "delete") // 取消
+              IconButton(
+                icon: Icon(
+                  Icons.undo,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  var data = playlist.data[playItem] as List;
+                  for(var i = 0; i < data.length; i++) {
+                    data[i].remove("delete");
+                  }
+                  operation = "";
+                  setState(() { });
+                },
+              )
+            ]
+          ), // AppBar(title: Text("MyTube")),
           drawer: Drawer(
             child: createMenu(),
           ),
@@ -177,20 +213,21 @@ class _HomeState extends State<Home> {
   }
   
   Future<bool> _onWillPop() async {
-    String currenturl = (await this.webViewController!.currentUrl()).toString();
-    print("MyTube.onWillPop.currentUrl: $currenturl");
+    if(playItem == "YouTube") {
+      String currenturl = (await this.webViewController!.currentUrl()).toString();
+      print("MyTube.onWillPop.currentUrl: $currenturl");
 
-    if (this.webViewController != null && currenturl != url + "/") {
-      if(currenturl.indexOf("list=") > -1 || currenturl.indexOf("/feed/") > -1 || currenturl.indexOf("/user/") > -1 || currenturl.indexOf("/channel/") > -1) 
-        this.webViewController!.goBack();
-      else if(currenturl.indexOf("/playlists") > -1 || currenturl.indexOf("/videos") > -1 || currenturl.indexOf("/featured") > -1) 
-        this.webViewController!.goBack();
-      else
-        this.webViewController!.loadUrl(url);
-      return Future.value(false); // 表示不退出
-    } else {
-      return Future.value(true);
+      if (this.webViewController != null && currenturl != url + "/") {
+        if(currenturl.indexOf("list=") > -1 || currenturl.indexOf("/feed/") > -1 || currenturl.indexOf("/user/") > -1 || currenturl.indexOf("/channel/") > -1) 
+          this.webViewController!.goBack();
+        else if(currenturl.indexOf("/playlists") > -1 || currenturl.indexOf("/videos") > -1 || currenturl.indexOf("/featured") > -1) 
+          this.webViewController!.goBack();
+        else
+          this.webViewController!.loadUrl(url);
+        return Future.value(false); // 表示不退出
+      }
     }
+    return Future.value(true);
   }
 
   WebView createWeb() {
@@ -268,20 +305,45 @@ class _HomeState extends State<Home> {
       itemCount: data.length,
       itemBuilder: (context, index) {
         return  ListTile(
-          title: Text(data[index]["title"],
+          title: Text((index +1).toString() + ". " + data[index]["title"],
             style: TextStyle(
               // color: Colors.red,
               fontSize: 20,
             ),
           ),
+          // subtitle: Text(data[index]["fileName"]),
+          // leading: Icon(Icons.more_vert),
+          // trailing: (data[index]["active"])
+          //         ? Icon(Icons.check_box)
+          //         : Icon(Icons.check_box_outline_blank), // ok 的
+          trailing: operation == "" ? (data[index]["fileName"] is String && data[index]["fileName"].length > 0 ? Icon(Icons.live_tv_rounded) : null)
+            :  (data[index]["delete"] == true ? Icon(Icons.check_box) : Icon(Icons.check_box_outline_blank)),
           onTap: () async {
-            // await Storage.setString("playItem", k);
-            // playItem = k;
-            // readMenuList();
-            // setState(() { });
-            // Navigator.pop(context);
+            if(operation == "") {
+              for(var i = 0; i < data.length; i++) {
+                if(i == index)
+                  data[i]["active"] = true;
+                else
+                  data[i].remove("active");
+              }
+              playlist.save();
+            } else {
+              data[index]["delete"] = data[index]["delete"] == true ? false : true;
+            }
+            setState(() { });
           },
-          selected: data[index]["active"] is bool && data[index]["active"] == true ? true : false ,
+          onLongPress: () {
+            if(operation == "") {
+              operation = "delete";
+            }
+            data[index]["delete"] = true;
+            // alert(context, index.toString()); // 可以用的
+            setState(() {
+            });
+          },
+          selected: data[index]["active"] is bool && data[index]["active"] == true 
+            || data[index]["delete"] is bool && data[index]["delete"] == true 
+            ? true : false ,
         );
       },
       separatorBuilder: (context, index) {
@@ -349,6 +411,7 @@ class _HomeState extends State<Home> {
       ]
     );
   }
+
   JavascriptChannel javascriptChannel(BuildContext context) { // 不用了
     return JavascriptChannel( // 接收來自 javascript
       name: 'Flutter',

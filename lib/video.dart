@@ -22,6 +22,7 @@ class Video extends StatefulWidget {
 
 class _VideoState extends State<Video> with WidgetsBindingObserver {
   int local = -1;
+  Map<String, dynamic> playItem = {};
   var timer;
   @override
   void initState() {
@@ -33,15 +34,8 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   void didChangeDependencies() async {
     super.didChangeDependencies();
     local = await Storage.getInt("isLocal");
-    this.setState(() {});
-    // alert(context, "test",
-    //   actions: [
-    //     {"text": "取消"},
-    //     {"text": "確定", "onPressed": (){
-    //       // Navigator.pop(context);
-    //     }
-    //   }]
-    // );
+    await changeSource();
+    this.setState((){});
   }
   @override
   void didChangeAppLifecycleState(AppLifecycleState state)  {
@@ -67,7 +61,6 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   @override
   void reassemble() async {
     super.reassemble();
-    // local = 1; this.setState(() {});
   }
   @override
   Widget build(BuildContext context) {
@@ -102,10 +95,32 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         onPressed: () async {
           local = local == 1 ? 0 : 1;
           await Storage.setInt("isLocal", local);
-          setState(()  { });
+          await changeSource();
+          setState((){ });
         },
         child: local == -1 ? Container() : Icon(local == 0 ? Icons.vertical_align_bottom_sharp : Icons.wb_cloudy_sharp, size: 30, color: Colors.white,),
       )
     );
+  }
+
+  changeSource() async {
+    playItem = {};
+    if(local == true) {
+      String url = await Storage.getString("url");
+      String fileName = await Storage.getString("fileName");
+      var file = File(fileName);
+      try{
+        if(url == this.widget.url && file.existsSync()) {
+          playItem["fileName"] = await Storage.getString("fileName");
+          playItem["title"] = await Storage.getString("title");
+          playItem["author"] = await Storage.getString("author");
+          playItem["mb"] = await Storage.getString("mb");
+          playItem["duration"] = Duration(milliseconds: await Storage.getInt("duration"));
+        }
+      } catch(e) {
+
+      }
+    }
+    print("MyTube: $playItem");
   }
 }
