@@ -18,7 +18,9 @@ Download download = new Download();
 Map<String, dynamic> historys = {};
 class Player extends StatefulWidget {
   final String url;
-  Player({Key? key, required this.url}) : super(key: key);
+  final String folder;
+  final Map<String, dynamic> playItem;
+  Player({Key? key, required this.url, this.folder = "", required this.playItem}) : super(key: key);
 
   @override
   _PlayerState createState() => _PlayerState();
@@ -39,17 +41,19 @@ class _PlayerState extends State<Player> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-
-    String url = await Storage.getString("url");
-    String fileName = await Storage.getString("fileName");
-    var file = File(fileName);
     try{
-      if(url == this.widget.url && file.existsSync()) {
-        download.fileName = await Storage.getString("fileName");
-        download.title = await Storage.getString("title");
-        download.author = await Storage.getString("author");
-        download.mb = await Storage.getString("mb");
-        download.duration = Duration(milliseconds: await Storage.getInt("duration"));
+      if(this.widget.playItem["fileName"] is String) {
+        var path = await Download.folder();
+        if(this.widget.playItem["fileName"].indexOf(path) > -1) {
+          download.fileName = this.widget.playItem["fileName"];
+        } else {
+          download.fileName = path + "/" + this.widget.folder + "/" + this.widget.playItem["fileName"];
+        }
+        
+        download.title = this.widget.playItem["title"];
+        download.author = this.widget.playItem["author"];
+        download.mb = this.widget.playItem["mb"] is String ? this.widget.playItem["mb"] : "";
+        download.duration = Duration(milliseconds: this.widget.playItem["duration"] is int ? this.widget.playItem["duration"] : 0);
         processing = 100;
         setState(() {});
       } else {
@@ -114,8 +118,11 @@ class _PlayerState extends State<Player> {
   }
 
   Future<void> getStream() async {
-    await download.initial(this.widget.url);
-    // await download.getVideoStream();
+    var url = this.widget.url;
+    if(url.length == 0 && this.widget.playItem["key"] is String) {
+      url = "https://m.youtube.com/watch?v=" + this.widget.playItem["key"];
+    }
+    await download.initial(url);
     setState(() { });
   }
   Future<void> getVideo() async {
@@ -437,14 +444,6 @@ class _PlayerControlerState extends State<PlayerControler> {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
-    // print("MyTube.isLargeScreen: ${global.isLargeScreen()}");
-   
-    // _controller!.seekTo(Duration(seconds: 460));
-    // Timer(Duration(milliseconds: 600), () {
-    //   _position = _controller!.value.position;
-    //   play();
-    //   this.setState((){});
-    // });
   }
   @override
   void dispose() {
@@ -490,9 +489,6 @@ class _PlayerControlerState extends State<PlayerControler> {
     historys[this.widget.videoKey] = jsonEncode(h);
     // print("MyTube.history: ${jsonEncode(h)}");
     await Storage.setString("historys", jsonEncode(historys));
-
-    // String s = await Storage.getString("historys");
-    // print("MyTube.historys: $s");
   }
 
   DateTime dtFirst = DateTime.now();

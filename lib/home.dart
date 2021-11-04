@@ -9,6 +9,7 @@ import 'package:mytube/youtube.dart';
 import 'package:mytube/system/system.dart';
 import 'package:device_info/device_info.dart';
 import 'package:mytube/system/playlist.dart';
+import 'package:mytube/video/player.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -160,47 +161,48 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    var appBar = AppBar(title: Text(playItem), 
+      actions: [
+        if(operation == "delete") // 確定刪除
+        IconButton(
+          icon: Icon(
+            Icons.delete,
+            color: Colors.white,
+          ),
+          onPressed: () { 
+            var data = playlist.data[playItem] as List;
+            for(var i = data.length - 1; i >= 0; i--) {
+              if(data[i]["delete"] == true)
+                data.removeAt(i);
+            }
+            playlist.save();
+            operation = "";
+            setState(() { });
+          },
+        ),
+        if(operation == "delete") // 取消
+        IconButton(
+          icon: Icon(
+            Icons.undo,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            var data = playlist.data[playItem] as List;
+            for(var i = 0; i < data.length; i++) {
+              data[i].remove("delete");
+            }
+            operation = "";
+            setState(() { });
+          },
+        )
+      ]
+    );
     return WillPopScope(
       onWillPop: _onWillPop,
-        child: Container(
-            padding: EdgeInsets.only(top: 24.0),
-            child: Scaffold(
-          appBar: playItem == "YouTube" ? null : AppBar(title: Text(playItem), 
-            actions: [
-              if(operation == "delete") // 確定刪除
-              IconButton(
-                icon: Icon(
-                  Icons.delete,
-                  color: Colors.white,
-                ),
-                onPressed: () { 
-                  var data = playlist.data[playItem] as List;
-                  for(var i = data.length - 1; i >= 0; i--) {
-                    if(data[i]["delete"] == true)
-                      data.removeAt(i);
-                  }
-                  playlist.save();
-                  operation = "";
-                  setState(() { });
-                },
-              ),
-              if(operation == "delete") // 取消
-              IconButton(
-                icon: Icon(
-                  Icons.undo,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  var data = playlist.data[playItem] as List;
-                  for(var i = 0; i < data.length; i++) {
-                    data[i].remove("delete");
-                  }
-                  operation = "";
-                  setState(() { });
-                },
-              )
-            ]
-          ), // AppBar(title: Text("MyTube")),
+      child: Container(
+        // padding: EdgeInsets.only(top: 24.0),
+        child: Scaffold(
+          appBar: playItem == "YouTube" ? null : appBar, // AppBar(title: Text("MyTube")),
           drawer: Drawer(
             child: createMenu(),
           ),
@@ -325,10 +327,24 @@ class _HomeState extends State<Home> {
                   data[i]["active"] = true;
                 else
                   data[i].remove("active");
+                data[i].remove("delete");
               }
               playlist.save();
+              if(data[index]["active"] = true)
+              openPlayer(data[index]);
             } else {
               data[index]["delete"] = data[index]["delete"] == true ? false : true;
+              if(data[index]["delete"] == false) {
+                bool b = false;
+                for(var i = 0; i < data.length; i++) {
+                  if(data[i]["delete"] == true) {
+                    b = true;
+                    break;
+                  }
+                }
+                if(b == false)
+                  operation = "";
+              }
             }
             setState(() { });
           },
@@ -338,8 +354,7 @@ class _HomeState extends State<Home> {
             }
             data[index]["delete"] = true;
             // alert(context, index.toString()); // 可以用的
-            setState(() {
-            });
+            setState(() {});
           },
           selected: data[index]["active"] is bool && data[index]["active"] == true 
             || data[index]["delete"] is bool && data[index]["delete"] == true 
@@ -447,5 +462,15 @@ class _HomeState extends State<Home> {
         this.setState(() {});
       });
     }
+  }
+  openPlayer(Map<String, dynamic> item){
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Player(url: "", folder: playItem, playItem: item); 
+      }
+    ).then((valueFromDialog) async {
+      
+    });
   }
 }

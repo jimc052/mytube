@@ -88,7 +88,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         ],
       ),
       body: local == -1 ? null : (local == 1  
-        ? Player(url: this.widget.url) 
+        ? Player(url: this.widget.url, playItem: playItem) 
         : Browser(url: this.widget.url)
       ),
       floatingActionButton: FloatingActionButton(
@@ -105,7 +105,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
 
   changeSource() async {
     playItem = {};
-    if(local == true) {
+    if(local == 1) {
       String url = await Storage.getString("url");
       String fileName = await Storage.getString("fileName");
       var file = File(fileName);
