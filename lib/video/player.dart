@@ -41,67 +41,26 @@ class _PlayerState extends State<Player> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-    try{
-      if(this.widget.playItem["fileName"] is String) {
-        var path = await Download.folder();
-        if(this.widget.playItem["fileName"].indexOf(path) > -1) {
-          download.fileName = this.widget.playItem["fileName"];
-        } else {
-          download.fileName = path + "/" + this.widget.folder + "/" + this.widget.playItem["fileName"];
-        }
-        
+    if(this.widget.playItem["fileName"] is String) {
+      var path = await Download.folder();
+      if(this.widget.playItem["fileName"].indexOf(path) > -1) {
+        download.fileName = this.widget.playItem["fileName"];
+      } else {
+        download.fileName = path + "/" + this.widget.folder + "/" + this.widget.playItem["fileName"];
+      }
+
+      var file = File(download.fileName);
+      if (file.existsSync()) {
         download.title = this.widget.playItem["title"];
         download.author = this.widget.playItem["author"];
         download.mb = this.widget.playItem["mb"] is String ? this.widget.playItem["mb"] : "";
         download.duration = Duration(milliseconds: this.widget.playItem["duration"] is int ? this.widget.playItem["duration"] : 0);
         processing = 100;
-        setState(() {});
-      } else {
-        String s = await Storage.getString("historys");
-        if(s.length > 0) {
-          historys = jsonDecode(s);
-          var arr = [];
-          var day10 = DateTime.now().add(const Duration(days: -10)).formate();
-          historys.forEach((k, v) {
-            Map<String, dynamic> history = jsonDecode(v);
-            print("MyTbue.history: $history");
-            var date = '''${history['date']}''';
-            if(date.compareTo(day10) == -1) {
-              arr.add(k);
-            }
-          });
-
-          arr.forEach((el) {
-            historys.remove(el);
-          });
-          if(arr.length > 0)
-            await Storage.setString("historys", jsonEncode(historys));
-        }
-        if(historys.containsKey(videoKey)) {
-          Map<String, dynamic> history = jsonDecode(historys[videoKey]);
-          var title = '''${history['title']}''';
-          if(title.length > 30) title = title.substring(0, 30) + "...";
-          if(processing != -9999)
-            alert(context, '''標題：$title\n\n觀看時間：${history['date']}\n\n是否確定再次觀看???''',
-            title: "觀看記錄",
-            actions: [{"text": "取消", 
-                "onPressed": (){
-                  Navigator.pop(context);
-                }
-              }, {"text": "確定", 
-              "onPressed": () async {
-                await getStream();
-              }
-            }]
-          );
-        } else
-          await getStream();
-      }
-    } catch(e) {
-      print("MyTube.player: $e");
-      if(processing != -9999)
-        alert(context, e.toString());
-    }
+        setState(() {});     
+      } else
+        checkHistroy();
+    } else 
+      checkHistroy();
   }
 
   @override
@@ -115,6 +74,54 @@ class _PlayerState extends State<Player> {
   @override
   void reassemble() async {
     super.reassemble();
+  }
+
+  checkHistroy() async{
+    try{
+      String s = await Storage.getString("historys");
+      if(s.length > 0) {
+        historys = jsonDecode(s);
+        var arr = [];
+        var day10 = DateTime.now().add(const Duration(days: -10)).formate();
+        historys.forEach((k, v) {
+          Map<String, dynamic> history = jsonDecode(v);
+          print("MyTbue.history: $history");
+          var date = '''${history['date']}''';
+          if(date.compareTo(day10) == -1) {
+            arr.add(k);
+          }
+        });
+
+        arr.forEach((el) {
+          historys.remove(el);
+        });
+        if(arr.length > 0)
+          await Storage.setString("historys", jsonEncode(historys));
+      }
+      if(historys.containsKey(videoKey)) {
+        Map<String, dynamic> history = jsonDecode(historys[videoKey]);
+        var title = '''${history['title']}''';
+        if(title.length > 30) title = title.substring(0, 30) + "...";
+        if(processing != -9999)
+          alert(context, '''標題：$title\n\n觀看時間：${history['date']}\n\n是否確定再次觀看???''',
+          title: "觀看記錄",
+          actions: [{"text": "取消", 
+              "onPressed": (){
+                Navigator.pop(context);
+              }
+            }, {"text": "確定", 
+            "onPressed": () async {
+              await getStream();
+            }
+          }]
+        );
+      } else
+        await getStream();
+    } catch(e) {
+      print("MyTube.player: $e");
+      if(processing != -9999)
+        alert(context, e.toString());
+    }
   }
 
   Future<void> getStream() async {

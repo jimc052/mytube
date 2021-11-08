@@ -140,7 +140,7 @@ class _HomeState extends State<Home> {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
     if(androidInfo.model == "V2") watchID = "/watch?v=ZqcIgCDWtGs";
-    // watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
+    if(androidInfo.model == "V2") watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
     // watchID = "/watch?v=iP8SqetfseI"; // test, 如實記
     if(playItem == "YouTube" && Platform.isAndroid && watchID.length > 0){
       new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
@@ -200,16 +200,18 @@ class _HomeState extends State<Home> {
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Container(
-        // padding: EdgeInsets.only(top: 24.0),
-        child: Scaffold(
-          appBar: playItem == "YouTube" ? null : appBar, // AppBar(title: Text("MyTube")),
-          drawer: Drawer(
-            child: createMenu(),
+        // padding: EdgeInsets.only(top: playItem == "YouTube" ? 24.0 : 0),
+        child: SafeArea(
+          child: Scaffold(
+            appBar: playItem == "YouTube" ? null : appBar, // AppBar(title: Text("MyTube")),
+            drawer: Drawer(
+              child: createMenu(),
+            ),
+            body: this.permission == true 
+              ? (playItem == "YouTube" ? createWeb() : creatPlayList())
+              : null,
           ),
-          body: this.permission == true 
-            ? (playItem == "YouTube" ? createWeb() : creatPlayList())
-            : null,
-        ),
+        )
       )
     );
   }
@@ -217,7 +219,7 @@ class _HomeState extends State<Home> {
   Future<bool> _onWillPop() async {
     if(playItem == "YouTube") {
       String currenturl = (await this.webViewController!.currentUrl()).toString();
-      print("MyTube.onWillPop.currentUrl: $currenturl");
+      // print("MyTube.onWillPop.currentUrl: $currenturl");
 
       if (this.webViewController != null && currenturl != url + "/") {
         if(currenturl.indexOf("list=") > -1 || currenturl.indexOf("/feed/") > -1 || currenturl.indexOf("/user/") > -1 || currenturl.indexOf("/channel/") > -1) 
@@ -374,6 +376,7 @@ class _HomeState extends State<Home> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
+          // padding: EdgeInsets.only(top: playItem == "YouTube" ? 24.0 : 24.0 + 15, left: 15.0, bottom: 15.0),
           padding: EdgeInsets.all(15.0),
           decoration: BoxDecoration(
             color: Colors.blue,
@@ -467,7 +470,22 @@ class _HomeState extends State<Home> {
     showDialog(
       context: context,
       builder: (_) {
-        return Player(url: "", folder: playItem, playItem: item); 
+        return SafeArea(
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_sharp,
+                  color: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text('MyTube'),
+            ),
+            body: Player(url: "", folder: playItem, playItem: item)
+          )
+        );
+      // )//Player(url: "", folder: playItem, playItem: item); 
       }
     ).then((valueFromDialog) async {
       

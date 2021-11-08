@@ -45,7 +45,7 @@ class _PanelState extends State<Panel> {
       await playlist.initial();
      
       playlist.data.forEach((k, v) {
-        print("MyTube.playlist: ${k}");
+        // print("MyTube.playlist: ${k}");
         if(exists == false) {
           for(var i = 0; i < v.length; i++) {
             if(v[i]["key"] == this.widget.videoKey){
@@ -93,33 +93,35 @@ class _PanelState extends State<Panel> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black54,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_sharp,
-            color: Colors.orange,
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.black54,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_sharp,
+              color: Colors.orange,
+            ),
+            onPressed: () => Navigator.pop(context),
           ),
-          onPressed: () => Navigator.pop(context),
+          title: Text('另存新檔',
+            style: TextStyle(
+              color: Colors.orange,
+              fontSize: 20,
+            )
+          ),
         ),
-        title: Text('另存新檔',
-          style: TextStyle(
-            color: Colors.orange,
-            fontSize: 20,
+        body: body(),
+        floatingActionButton: saved == false && exists == false
+          ? FloatingActionButton(
+              backgroundColor: Colors.black87,
+              onPressed: () async {
+                save();
+              },
+              child:  Icon(Icons.save_sharp, size: 30, color: Colors.orange)
           )
-        ),
-      ),
-      body: body(),
-      floatingActionButton: saved == false && exists == false
-        ? FloatingActionButton(
-            backgroundColor: Colors.black87,
-            onPressed: () async {
-              save();
-            },
-            child:  Icon(Icons.save_sharp, size: 30, color: Colors.orange)
-        )
-        : Container() 
+          : Container() 
+      )
     );
   }
 

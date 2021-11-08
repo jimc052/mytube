@@ -64,41 +64,43 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_sharp,
-            color: Colors.white,
+    return SafeArea(
+          child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_sharp,
+              color: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context),
           ),
-          onPressed: () => Navigator.pop(context),
+          title: Text('MyTube'),
+          actions: [
+            // if(local == 1)
+            //   IconButton( // 另存新檔
+            //     icon: Icon(
+            //       Icons.file_copy,
+            //       color: Colors.white,
+            //     ),
+            //     onPressed: () {
+            //       fileSave(context, url: this.widget.url); 
+            //     }
+            //   ),
+          ],
         ),
-        title: Text('MyTube'),
-        actions: [
-          // if(local == 1)
-          //   IconButton( // 另存新檔
-          //     icon: Icon(
-          //       Icons.file_copy,
-          //       color: Colors.white,
-          //     ),
-          //     onPressed: () {
-          //       fileSave(context, url: this.widget.url); 
-          //     }
-          //   ),
-        ],
-      ),
-      body: local == -1 ? null : (local == 1  
-        ? Player(url: this.widget.url, playItem: playItem) 
-        : Browser(url: this.widget.url)
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          local = local == 1 ? 0 : 1;
-          await Storage.setInt("isLocal", local);
-          await changeSource();
-          setState((){ });
-        },
-        child: local == -1 ? Container() : Icon(local == 0 ? Icons.vertical_align_bottom_sharp : Icons.wb_cloudy_sharp, size: 30, color: Colors.white,),
+        body: local == -1 ? null : (local == 1  
+          ? Player(url: this.widget.url, playItem: playItem) 
+          : Browser(url: this.widget.url)
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            local = local == 1 ? 0 : 1;
+            await Storage.setInt("isLocal", local);
+            await changeSource();
+            setState((){ });
+          },
+          child: local == -1 ? Container() : Icon(local == 0 ? Icons.vertical_align_bottom_sharp : Icons.wb_cloudy_sharp, size: 30, color: Colors.white,),
+        )
       )
     );
   }
