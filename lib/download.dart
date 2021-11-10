@@ -13,8 +13,9 @@ enum Mode {
 
 class Download {
   String title = "", author = "", fileName = "", path = "", url = "", mb = "";
-  int qualityHigh = -1, qualityLow = -1, qualityMedium = -1, selected = -1;
+  int qualityHigh = -1, qualityLow = -1, qualityMedium = -1, selected = -1, position = 0;
   Duration duration = Duration(seconds: 0);
+  
   final yt = YoutubeExplode();
   bool stop = false;
   Mode mode = Mode.none;
@@ -80,8 +81,9 @@ class Download {
     stop = false;
     try {
       mb = "${audio.size.totalMegaBytes.toStringAsFixed(2) + 'MB'}";
-      fileName = ((fileName.length == 0) ? 'youtube' : fileName) 
-        + '.${audio.container.name.toString()}';
+      fileName = ((fileName.length == 0) ? 'youtube' : fileName);
+      if(fileName.indexOf(".") == -1)
+        fileName += '.${audio.container.name.toString()}';
 
       path = await Download.folder();
       // print("MyTube: $path");
@@ -95,17 +97,6 @@ class Download {
       this.fileName = path + (folder.length > 0 ? '/$folder' : '') + '/$fileName';
       var file = File(this.fileName);
       removeFile();
-      // if(fileName.indexOf("youtube.") == 0) {
-      //   List f1 = ['3gpp', 'webm', 'mp4'];
-      //   for(var i = 0; i < f1.length; i++) {
-      //     var f2 = File(path + '/$folder/' + 'youtube.' + f1[i]);
-      //     if (f2.existsSync()) {
-      //       f2.deleteSync();
-      //     }
-      //   }
-      // } else if (file.existsSync()) {
-      //   file.deleteSync();
-      // }
 
       var audioStream = yt.videos.streamsClient.get(audio); 
       var output = file.openWrite(mode: FileMode.writeOnlyAppend);

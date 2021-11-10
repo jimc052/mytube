@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:mytube/system/storage.dart';
 
 class History {
-  String title, author, date, position;
+  String title, author, date;
+  int position;
 
   History(this.title, this.author, this.date, this.position);
 

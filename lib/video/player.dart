@@ -13,9 +13,11 @@ import 'package:mytube/video/fileSave.dart';
 // import 'package:mytube/system/global.dart' as global;
 import 'package:mytube/system/history.dart';
 import 'package:mytube/extension/extension.dart';
+import 'package:mytube/system/playlist.dart';
 
 Download download = new Download();
 Map<String, dynamic> historys = {};
+Playlist playlist = Playlist();
 class Player extends StatefulWidget {
   final String url;
   final String folder;
@@ -30,7 +32,8 @@ class _PlayerState extends State<Player> {
   int processing = -1, streamsTimes = 0;
   var player, timerChoice;
   String videoKey = "";
-  
+  bool isPlaylist = false;
+
   @override
   void initState() {
     super.initState();
@@ -41,12 +44,43 @@ class _PlayerState extends State<Player> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
+    String s = await Storage.getString("historys");
+    if(s.indexOf("0:00:00 / ") > -1) s = ""; // 為了清除以前的格式，2021-11-09
+    // print("MyTube.historys: $s");
+    if(s.length > 0) {
+      historys = jsonDecode(s);
+      var arr = [];
+      var day10 = DateTime.now().add(const Duration(days: -10)).formate();
+      historys.forEach((k, v) {
+        Map<String, dynamic> history = jsonDecode(v);
+        print("MyTbue.history: $history");
+        var date = '''${history['date']}''';
+        if(date.compareTo(day10) == -1) {
+          arr.add(k);
+        }
+      });
+
+      arr.forEach((el) {
+        historys.remove(el);
+      });
+      if(arr.length > 0)
+        await Storage.setString("historys", jsonEncode(historys));
+    }
+    
     if(this.widget.playItem["fileName"] is String) {
       var path = await Download.folder();
       if(this.widget.playItem["fileName"].indexOf(path) > -1) {
         download.fileName = this.widget.playItem["fileName"];
+        if(historys.containsKey(videoKey) == true){
+          Map<String, dynamic> history = jsonDecode(historys[videoKey]);
+          download.position = history["position"];
+          print("MyTube.position: ${download.position}");
+        }
       } else {
         download.fileName = path + "/" + this.widget.folder + "/" + this.widget.playItem["fileName"];
+        download.position = this.widget.playItem["position"] is int ? this.widget.playItem["position"] : 0;
+        isPlaylist = true;
+        await playlist.initial();
       }
 
       var file = File(download.fileName);
@@ -78,27 +112,7 @@ class _PlayerState extends State<Player> {
 
   checkHistroy() async{
     try{
-      String s = await Storage.getString("historys");
-      if(s.length > 0) {
-        historys = jsonDecode(s);
-        var arr = [];
-        var day10 = DateTime.now().add(const Duration(days: -10)).formate();
-        historys.forEach((k, v) {
-          Map<String, dynamic> history = jsonDecode(v);
-          print("MyTbue.history: $history");
-          var date = '''${history['date']}''';
-          if(date.compareTo(day10) == -1) {
-            arr.add(k);
-          }
-        });
-
-        arr.forEach((el) {
-          historys.remove(el);
-        });
-        if(arr.length > 0)
-          await Storage.setString("historys", jsonEncode(historys));
-      }
-      if(historys.containsKey(videoKey)) {
+      if(isPlaylist == false && historys.containsKey(videoKey)) {
         Map<String, dynamic> history = jsonDecode(historys[videoKey]);
         var title = '''${history['title']}''';
         if(title.length > 30) title = title.substring(0, 30) + "...";
@@ -133,20 +147,22 @@ class _PlayerState extends State<Player> {
     setState(() { });
   }
   Future<void> getVideo() async {
-    Storage.setInt("position", 0);
     try{
-      await download.execute(onProcessing: (int process){
-        processing = process;
-        if(process == 100) {
-          Storage.setString("url", this.widget.url);
-          Storage.setString("fileName", download.fileName);
-          Storage.setString("title", download.title);
-          Storage.setString("author", download.author);
-          Storage.setString("mb", download.mb);
-          Storage.setInt("duration", download.duration.inMilliseconds);
+      await download.execute(folder: isPlaylist == true ? this.widget.folder : "",
+        fileName: isPlaylist == true ? this.widget.playItem["fileName"] : "",
+        onProcessing: (int process){
+          processing = process;
+          if(process == 100 && isPlaylist == false) {
+            Storage.setString("url", this.widget.url);
+            Storage.setString("fileName", download.fileName);
+            Storage.setString("title", download.title);
+            Storage.setString("author", download.author);
+            Storage.setString("mb", download.mb);
+            Storage.setInt("duration", download.duration.inMilliseconds);
+          }
+          setState(() { });
         }
-        setState(() { });
-      });      
+      );      
     } catch(e) {
       alert(context, e.toString());
     }
@@ -208,8 +224,10 @@ class _PlayerState extends State<Player> {
     double height = MediaQuery.of(context).size.height;
 
     List<Widget> widget = [];
-    if(processing == 100)
-      widget.add(PlayerControler(fileName: download.fileName, videoKey: videoKey, controller: player,));
+    if(processing == 100) {
+      widget.add(PlayerControler(fileName: download.fileName, position: download.position, videoKey: videoKey, controller: player, 
+        onProcessing: recorder));
+    }
     widget.add(Expanded( flex: 1,
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 8.0),
@@ -259,7 +277,7 @@ class _PlayerState extends State<Player> {
                     },
                   ),
                 if(processing == 100) Container(width: 5),
-                if(processing == 100) 
+                if(processing == 100 && isPlaylist == false) 
                   ElevatedButton(
                     child: Text('另存新檔'),
                     style: ButtonStyle(textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
@@ -282,6 +300,19 @@ class _PlayerState extends State<Player> {
       )
     );
     return widget;
+  }
+
+  recorder(int position) async {
+    if(isPlaylist == true) {
+      this.widget.playItem["position"] = position;
+      playlist.update(this.widget.folder, this.widget.playItem);
+    } else {
+      final DateTime now = DateTime.now();
+      History h = History(download.title, download.author, now.formate(), position);
+      historys[videoKey] = jsonEncode(h);
+      // print("MyTube.history: ${jsonEncode(h)}");
+      await Storage.setString("historys", jsonEncode(historys));
+    }
   }
 
   Widget information(){
@@ -388,8 +419,11 @@ class _PlayerState extends State<Player> {
 class PlayerControler extends StatefulWidget {
   final String fileName, videoKey;
   dynamic controller;
+  Function(int) onProcessing;
+  int position;
 
-  PlayerControler({Key? key, required this.fileName, required this.videoKey, required this.controller}) : super(key: key);
+  PlayerControler({Key? key, required this.fileName, this.position = 0, required this.videoKey, 
+    required this.controller, required this.onProcessing}) : super(key: key);
 
   @override
   _PlayerControlerState createState() => _PlayerControlerState();
@@ -422,9 +456,9 @@ class _PlayerControlerState extends State<PlayerControler> {
     ..initialize().then((_) {
       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
       setState(() async {
-        int position = await Storage.getInt("position");
-        if(position > 0)
-          _controller!.seekTo(Duration(seconds: position));
+        // int position = await Storage.getInt("position");
+        if(this.widget.position > 0)
+          _controller!.seekTo(Duration(seconds: this.widget.position));
         play();
       });
     });
@@ -482,20 +516,20 @@ class _PlayerControlerState extends State<PlayerControler> {
     if(interval != null) interval.cancel();
     _controller!.pause();
     _controller!.seekTo(Duration(seconds: 0));
-    Storage.setInt("position", 0);
     _position = Duration(seconds: 0);
     await methodChannel.invokeMethod('stop');
     saveHistory();
   }
 
-   saveHistory() async {
-    final DateTime now = DateTime.now();
-    History h = History(download.title, download.author, 
-      now.formate(), 
-      '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}');
-    historys[this.widget.videoKey] = jsonEncode(h);
-    // print("MyTube.history: ${jsonEncode(h)}");
-    await Storage.setString("historys", jsonEncode(historys));
+  saveHistory() {
+    this.widget.onProcessing(_position.inSeconds);
+    // final DateTime now = DateTime.now();
+    // History h = History(download.title, download.author, 
+    //   now.formate(), 
+    //   '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}');
+    // historys[this.widget.videoKey] = jsonEncode(h);
+    // // print("MyTube.history: ${jsonEncode(h)}");
+    // await Storage.setString("historys", jsonEncode(historys));
   }
 
   DateTime dtFirst = DateTime.now();
@@ -514,12 +548,12 @@ class _PlayerControlerState extends State<PlayerControler> {
               stop();
               setState(() { });
             }
-            Storage.setInt("position", _position.inSeconds);
             methodChannel.invokeMethod('play', {
               "title": download.title,
               "author": download.author,
               "position": '${_position.toString().substring(0, 7)} / ${_duration.toString().substring(0, 7)}'
             });
+            saveHistory();
           }
           if(state == "onResume") {
             this.setState((){});

@@ -12,6 +12,7 @@ class Playlist {
     var filePlayList = File(path);
     if(filePlayList.existsSync() == true){
       final content = filePlayList.readAsStringSync();
+      // print("MyTube.playlist: ${content}");
       _data = jsonDecode(content);
       var arr = [];
       _data.forEach((k, v) {
@@ -39,6 +40,34 @@ class Playlist {
     }
      _data[key].add(value);
     save();
+  }
+
+  update(String key, Map<String, dynamic> value){
+    if(_data.containsKey(key)) {
+      for(int i = 0; i < _data[key].length; i++) {
+        if(value["key"] == _data[key][i]["key"]) {
+          _data[key][i] = value;
+          save();
+          return;
+        }
+      }
+    }
+  }
+
+  Map<String, dynamic>? search(String key){
+    String folder = "";
+    Map<String, dynamic>? _item;
+    _data.forEach((k, v) {
+      if(_item != null) return;
+      for(int i = 0; i < v.length; i++) {
+        if(v[i]["key"] == key) {
+          folder = k;
+          _item = v[i];
+          return;
+        }
+      }
+    });
+    return folder.length == 0 ? null : {"key": folder, "item": _item};
   }
 
   save(){

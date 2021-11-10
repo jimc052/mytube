@@ -139,8 +139,8 @@ class _HomeState extends State<Home> {
     String watchID = await Storage.getString("watchID");
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    if(androidInfo.model == "V2") watchID = "/watch?v=ZqcIgCDWtGs";
-    if(androidInfo.model == "V2") watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
+    if(androidInfo.model == "V2") watchID = "/watch?v=i_7_tioMqKc";
+    // if(androidInfo.model == "V2") watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
     // watchID = "/watch?v=iP8SqetfseI"; // test, 如實記
     if(playItem == "YouTube" && Platform.isAndroid && watchID.length > 0){
       new Future.delayed(const Duration(milliseconds: 1000 * 3), () {
@@ -306,7 +306,7 @@ class _HomeState extends State<Home> {
     var data = playlist.data[playItem];
     return ListView.separated(
       padding: EdgeInsets.zero,
-      itemCount: data.length,
+      itemCount: data == null ? [] : data.length,
       itemBuilder: (context, index) {
         return  ListTile(
           title: Text((index +1).toString() + ". " + data[index]["title"],
@@ -315,13 +315,13 @@ class _HomeState extends State<Home> {
               fontSize: 20,
             ),
           ),
-          // subtitle: Text(data[index]["fileName"]),
+          subtitle: Text(data[index]["position"] is int ? Duration(seconds:data[index]["position"]).toString().substring(0, 7) : ""),
           // leading: Icon(Icons.more_vert),
           // trailing: (data[index]["active"])
           //         ? Icon(Icons.check_box)
           //         : Icon(Icons.check_box_outline_blank), // ok 的
-          trailing: operation == "" ? (data[index]["fileName"] is String && data[index]["fileName"].length > 0 ? Icon(Icons.live_tv_rounded) : null)
-            :  (data[index]["delete"] == true ? Icon(Icons.check_box) : Icon(Icons.check_box_outline_blank)),
+          // trailing: operation == "" ? (data[index]["fileName"] is String && data[index]["fileName"].length > 0 ? Icon(Icons.live_tv_rounded) : null)
+          //   :  (data[index]["delete"] == true ? Icon(Icons.check_box) : Icon(Icons.check_box_outline_blank)),
           onTap: () async {
             if(operation == "") {
               for(var i = 0; i < data.length; i++) {
@@ -467,6 +467,7 @@ class _HomeState extends State<Home> {
     }
   }
   openPlayer(Map<String, dynamic> item){
+    print("MyTube: $item");
     showDialog(
       context: context,
       builder: (_) {
@@ -488,7 +489,9 @@ class _HomeState extends State<Home> {
       // )//Player(url: "", folder: playItem, playItem: item); 
       }
     ).then((valueFromDialog) async {
-      
+        await playlist.initial();
+        await readMenuList();
+        this.setState(() {});
     });
   }
 }

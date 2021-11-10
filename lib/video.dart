@@ -3,7 +3,8 @@ import 'package:mytube/system/history.dart';
 import 'package:mytube/video/player.dart';
 import 'package:mytube/video/browser.dart';
 import 'package:mytube/system/system.dart';
-import 'package:mytube/youtube.dart';
+import 'package:mytube/download.dart';
+import 'package:mytube/system/playlist.dart';
 import 'dart:ui'; 
 import 'dart:async';
 import 'dart:io';
@@ -23,6 +24,7 @@ class Video extends StatefulWidget {
 class _VideoState extends State<Video> with WidgetsBindingObserver {
   int local = -1;
   Map<String, dynamic> playItem = {};
+  String folder = "";
   var timer;
   @override
   void initState() {
@@ -33,8 +35,19 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-    local = await Storage.getInt("isLocal");
-    await changeSource();
+    String key = Download.parselKey(this.widget.url);
+    Playlist playlist = Playlist();
+    await playlist.initial();
+    Map<String, dynamic>? _playItem = playlist.search(key);
+    if(_playItem == null) {
+      local = await Storage.getInt("isLocal");
+      await changeSource();
+    } else {
+      playItem = _playItem["item"];
+      folder = _playItem["key"];
+      local = 1;
+    }
+
     this.setState((){});
   }
   @override
@@ -65,7 +78,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-          child: Scaffold(
+      child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: Icon(
@@ -89,10 +102,12 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
           ],
         ),
         body: local == -1 ? null : (local == 1  
-          ? Player(url: this.widget.url, playItem: playItem) 
+          ? Player(url: this.widget.url, folder: folder, playItem: playItem) 
           : Browser(url: this.widget.url)
         ),
-        floatingActionButton: FloatingActionButton(
+        floatingActionButton: playItem["key"] is String
+          ? Container()
+          : FloatingActionButton(
           onPressed: () async {
             local = local == 1 ? 0 : 1;
             await Storage.setInt("isLocal", local);
@@ -118,11 +133,11 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
           playItem["author"] = await Storage.getString("author");
           playItem["mb"] = await Storage.getString("mb");
           playItem["duration"] = Duration(milliseconds: await Storage.getInt("duration"));
+        } else {
         }
       } catch(e) {
 
       }
     }
-    print("MyTube: $playItem");
   }
 }
