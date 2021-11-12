@@ -105,8 +105,8 @@ class _HomeState extends State<Home> {
       menuList.add(
         ListTile(
           title: Text(k,
+            overflow: TextOverflow.ellipsis, maxLines: 2,
             style: TextStyle(
-              // color: Colors.red,
               fontSize: 20,
             ),
           ),
@@ -303,19 +303,30 @@ class _HomeState extends State<Home> {
   }
 
   Widget creatPlayList(){
-    var data = playlist.data[playItem];
+    var data = playlist.data.containsKey(playItem) ? playlist.data[playItem] : [];
     return ListView.separated(
       padding: EdgeInsets.zero,
-      itemCount: data == null ? [] : data.length,
+      itemCount: data.length,
       itemBuilder: (context, index) {
         return  ListTile(
           title: Text((index +1).toString() + ". " + data[index]["title"],
+            overflow: TextOverflow.ellipsis, maxLines: 2,
             style: TextStyle(
               // color: Colors.red,
               fontSize: 20,
             ),
           ),
-          subtitle: Text(data[index]["position"] is int ? Duration(seconds:data[index]["position"]).toString().substring(0, 7) : ""),
+          subtitle: Row(children: [
+            Text(data[index]["date"].substring(0, 10)),
+            Expanded(
+              child: Container(),
+              flex: 1
+            ),
+            data[index]["position"] is int 
+              ? Text(Duration(seconds:data[index]["position"]).toString().substring(0, 7), ) 
+              : Container(),
+          ]),
+          
           // leading: Icon(Icons.more_vert),
           // trailing: (data[index]["active"])
           //         ? Icon(Icons.check_box)

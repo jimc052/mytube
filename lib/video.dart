@@ -88,18 +88,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text('MyTube'),
-          actions: [
-            // if(local == 1)
-            //   IconButton( // 另存新檔
-            //     icon: Icon(
-            //       Icons.file_copy,
-            //       color: Colors.white,
-            //     ),
-            //     onPressed: () {
-            //       fileSave(context, url: this.widget.url); 
-            //     }
-            //   ),
-          ],
+          actions: [],
         ),
         body: local == -1 ? null : (local == 1  
           ? Player(url: this.widget.url, folder: folder, playItem: playItem) 

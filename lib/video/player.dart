@@ -20,8 +20,8 @@ Map<String, dynamic> historys = {};
 Playlist playlist = Playlist();
 class Player extends StatefulWidget {
   final String url;
-  final String folder;
-  final Map<String, dynamic> playItem;
+  String folder;
+  Map<String, dynamic> playItem;
   Player({Key? key, required this.url, this.folder = "", required this.playItem}) : super(key: key);
 
   @override
@@ -302,6 +302,21 @@ class _PlayerState extends State<Player> {
     return widget;
   }
 
+  void fileSave(BuildContext context, {String videoKey = "", String fileName = "", required String title, required String author}) {
+    showDialog(
+      barrierDismissible: false,
+      context: context, 
+      builder: (BuildContext context) => FileSave(videoKey: videoKey, fileName: fileName, title: title, author: author),
+    ).then((value) async {
+      if(value != null) {
+        await playlist.initial();
+      this.widget.folder = value["folder"];
+      this.widget.playItem = value["playItem"];
+      }
+    });
+  }
+  
+
   recorder(int position) async {
     if(isPlaylist == true) {
       this.widget.playItem["position"] = position;
@@ -457,8 +472,10 @@ class _PlayerControlerState extends State<PlayerControler> {
       // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
       setState(() async {
         // int position = await Storage.getInt("position");
-        if(this.widget.position > 0)
+        if(this.widget.position > 0){
+          _position = Duration(seconds: this.widget.position);
           _controller!.seekTo(Duration(seconds: this.widget.position));
+        }
         play();
       });
     });

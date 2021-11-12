@@ -6,23 +6,15 @@ import 'dart:convert';
 import 'package:mytube/extension/extension.dart';
 import 'package:mytube/system/playlist.dart';
 
-void fileSave(BuildContext context, {String videoKey = "", String fileName = "", required String title, required String author}) {
-  showDialog(
-    barrierDismissible: false,
-    context: context, 
-    builder: (BuildContext context) => Panel(videoKey: videoKey, fileName: fileName, title: title, author: author),
-  );
-}
-
-class Panel extends StatefulWidget {
+class FileSave extends StatefulWidget {
   String videoKey, fileName, title, author;
-  Panel({Key? key, required this.videoKey, this.fileName = "", required this.title, required this.author}) : super(key: key);
+  FileSave({Key? key, required this.videoKey, this.fileName = "", required this.title, required this.author}) : super(key: key);
 
   @override
-  _PanelState createState() => _PanelState();
+  _FileSaveState createState() => _FileSaveState();
 }
 
-class _PanelState extends State<Panel> {
+class _FileSaveState extends State<FileSave> {
   String path = "", activeFolder= "", activeFileName = "";
   final TextEditingController textEditingControllerF = new TextEditingController();
   final TextEditingController textEditingControllerD = new TextEditingController();
@@ -141,25 +133,20 @@ class _PanelState extends State<Panel> {
       var file2 = File(f2);
       if(file2.existsSync() == false){
         file.copySync(f2);
-        
         saved = true;
         setState(() {});
         final DateTime now = DateTime.now();
-        // this.key, this.title, this.author, this.date, this.fileName
-        var list ={
+        var list = {
           "key": this.widget.videoKey, 
           "title": this.widget.title, 
           "author": this.widget.author, 
           "date": now.formate(), 
           "fileName": textEditingControllerF.text + ext
         };
-        // if(! playlist.containsKey(textEditingControllerD.text)) {
-        //   playlist[textEditingControllerD.text] = [];
-        // }
-        // playlist[textEditingControllerD.text].add(list);
-        // Download.setPlaylist(playlist);
         playlist.add(textEditingControllerD.text, list);
-        alert(context, "存檔完成!!");
+        
+        // alert(context, "存檔完成!!");
+        Navigator.pop(context, {"folder": textEditingControllerD.text, "playItem": list});
       } else {
         alert(context, "檔案已存在!!");
       }
@@ -408,24 +395,3 @@ class _PanelState extends State<Panel> {
     );
   }
 }
-
-// class PlayList {
-//   String key, title, author, fileName, date;
-
-//   PlayList(this.key, this.title, this.author, this.date, this.fileName);
-
-//   PlayList.fromJson(Map<String, dynamic> json)
-//       : key = json['key'],
-//         title = json['title'],
-//         author = json["author"],
-//         date = json["date"],
-//         fileName = json["fileName"];
-
-//   Map<String, dynamic> toJson() => {
-//     "key": key,
-//     "title": title,
-//     "author": author,
-//     "date": date,
-//     "fileName": fileName
-//   };
-// }
