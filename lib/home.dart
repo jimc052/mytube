@@ -22,9 +22,10 @@ class _HomeState extends State<Home> {
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
   final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer, url = "https://m.youtube.com", permission = false;
-  String currentURL = "", versionName = "", playItem = "", operation = "";
+  String currentURL = "", versionName = "", playItem = "", operation = "", deleteFlag = "";
   List<ListTile> menuList = [];
   Playlist playlist = Playlist();
+  ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -64,65 +65,14 @@ class _HomeState extends State<Home> {
   inital(bool permission) async {
     this.permission = permission;
     playItem = await Storage.getString("playItem");
-    if(playItem.length == 0)  playItem = "YouTube";
+    if(playItem.length == 0)  
+      playItem = "YouTube";
+    else if(playItem != "YouTube")
+      scrollTo();
     await playlist.initial();
     await readMenuList();
     this.setState(() {});
   }
-
-  readMenuList() async {
-    operation = "";
-    menuList = [];
-    
-    menuList.add(
-      ListTile(
-        title: Text('YouTube',
-          style: TextStyle(
-            // color: Colors.red,
-            fontSize: 20,
-          ),
-        ),
-        onTap: () async {
-          Navigator.pop(context);
-          currentURL = "";
-          if(playItem == "YouTube") {
-            this.webViewController!.reload();
-          } else {
-            playItem = "YouTube";
-            await Storage.setString("playItem", "YouTube");
-            setState(() { });
-            readMenuList();
-          }
-        },
-        // subtitle: _act != 2 ? const Text('The airplane is only in Act II.') : null,
-        // enabled: _act == 2,
-        selected: playItem == "YouTube" ? true : false ,
-        // leading: const Icon(Icons.flight_land),
-      )
-    );
-
-    playlist.data.forEach((k, v) {
-      menuList.add(
-        ListTile(
-          title: Text(k,
-            overflow: TextOverflow.ellipsis, maxLines: 2,
-            style: TextStyle(
-              fontSize: 20,
-            ),
-          ),
-          onTap: () async {
-            await Storage.setString("playItem", k);
-            playItem = k;
-            readMenuList();
-            setState(() { });
-            Navigator.pop(context);
-          },
-          selected: playItem == k ? true : false ,
-        )
-      );
-    });
-  }
-
   Future<bool> _requestPermissions() async {
     if (await Permission.storage.request().isGranted) {
       return true;
@@ -156,6 +106,7 @@ class _HomeState extends State<Home> {
   }
   @override
   dispose() {
+    if(_scrollController != null) _scrollController.dispose();
     super.dispose();
   }
 
@@ -172,7 +123,7 @@ class _HomeState extends State<Home> {
           onPressed: () { 
             var data = playlist.data[playItem] as List;
             for(var i = data.length - 1; i >= 0; i--) {
-              if(data[i]["delete"] == true)
+              if(deleteFlag.indexOf(",$i,") > -1)
                 data.removeAt(i);
             }
             playlist.save();
@@ -187,10 +138,7 @@ class _HomeState extends State<Home> {
             color: Colors.white,
           ),
           onPressed: () {
-            var data = playlist.data[playItem] as List;
-            for(var i = 0; i < data.length; i++) {
-              data[i].remove("delete");
-            }
+            deleteFlag = "";
             operation = "";
             setState(() { });
           },
@@ -304,7 +252,9 @@ class _HomeState extends State<Home> {
 
   Widget creatPlayList(){
     var data = playlist.data.containsKey(playItem) ? playlist.data[playItem] : [];
+
     return ListView.separated(
+      controller: _scrollController,
       padding: EdgeInsets.zero,
       itemCount: data.length,
       itemBuilder: (context, index) {
@@ -326,7 +276,6 @@ class _HomeState extends State<Home> {
               ? Text(Duration(seconds:data[index]["position"]).toString().substring(0, 7), ) 
               : Container(),
           ]),
-          
           // leading: Icon(Icons.more_vert),
           // trailing: (data[index]["active"])
           //         ? Icon(Icons.check_box)
@@ -340,24 +289,27 @@ class _HomeState extends State<Home> {
                   data[i]["active"] = true;
                 else
                   data[i].remove("active");
-                data[i].remove("delete");
               }
               playlist.save();
               if(data[index]["active"] = true)
-              openPlayer(data[index]);
-            } else {
-              data[index]["delete"] = data[index]["delete"] == true ? false : true;
-              if(data[index]["delete"] == false) {
-                bool b = false;
-                for(var i = 0; i < data.length; i++) {
-                  if(data[i]["delete"] == true) {
-                    b = true;
-                    break;
-                  }
-                }
-                if(b == false)
-                  operation = "";
+                openPlayer(data[index]);
+              deleteFlag = "";
+            } else { // 刪除模式
+              if(deleteFlag.indexOf(",$index,") > -1) {
+                deleteFlag = deleteFlag.replaceAll("$index,", "");
+              } else {
+                deleteFlag += "$index,";
               }
+              print("MyTube.deleteFlag: $deleteFlag");
+              bool b = false;
+              for(var i = 0; i < data.length; i++) {
+                if(deleteFlag.indexOf(",$i,") > -1) {
+                  b = true;
+                  break;
+                }
+              }
+              if(b == false)
+                operation = "";
             }
             setState(() { });
           },
@@ -365,20 +317,100 @@ class _HomeState extends State<Home> {
             if(operation == "") {
               operation = "delete";
             }
-            data[index]["delete"] = true;
-            // alert(context, index.toString()); // 可以用的
+            deleteFlag = ",$index,";
+            print("MyTube.deleteFlag: $deleteFlag");
             setState(() {});
           },
-          selected: data[index]["active"] is bool && data[index]["active"] == true 
-            || data[index]["delete"] is bool && data[index]["delete"] == true 
+          selected: operation == "" && data[index]["active"] is bool && data[index]["active"] == true 
+            || (operation == "delete" && deleteFlag.indexOf(",$index,") > -1) 
             ? true : false ,
+          contentPadding: EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
         );
       },
       separatorBuilder: (context, index) {
         return Divider();
-      }
+      },
+      
     );
   }
+  scrollTo() async {
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    var data = playlist.data.containsKey(playItem) ? playlist.data[playItem] : [];
+    int index = 0;
+    for(var i = 0; i < data.length; i++) {
+      if(data[i]["active"] is bool && data[i]["active"] == true){
+        index = i;
+        break;
+      }
+    }
+    index = 15;
+    _scrollController.animateTo(
+      79 * (index.toDouble()),
+      duration: Duration(milliseconds: 500),
+      curve: Curves.fastOutSlowIn
+    );
+  }
+
+
+  readMenuList() async {
+    operation = "";
+    menuList = [];
+    
+    menuList.add(
+      ListTile(
+        title: Text('YouTube',
+          style: TextStyle(
+            // color: Colors.red,
+            fontSize: 20,
+          ),
+        ),
+        onTap: () async {
+          Navigator.pop(context);
+          currentURL = "";
+          if(playItem == "YouTube") {
+            this.webViewController!.reload();
+          } else {
+            playItem = "YouTube";
+            await Storage.setString("playItem", "YouTube");
+            setState(() { });
+            readMenuList();
+          }
+        },
+        // subtitle: _act != 2 ? const Text('The airplane is only in Act II.') : null,
+        // enabled: _act == 2,
+        selected: playItem == "YouTube" ? true : false ,
+        // leading: const Icon(Icons.flight_land),
+        contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 5.0),
+      )
+    );
+
+    playlist.data.forEach((k, v) {
+      menuList.add(
+        ListTile(
+          title: Text(k,
+            overflow: TextOverflow.ellipsis, maxLines: 2,
+            style: TextStyle(
+              fontSize: 20,
+            ),
+          ),
+          onTap: () async {
+            await Storage.setString("playItem", k);
+            deleteFlag = "";
+            playItem = k;
+            readMenuList();
+            setState(() { 
+            });
+            scrollTo();
+            Navigator.pop(context);
+          },
+          selected: playItem == k ? true : false ,
+          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 5.0),
+        )
+      );
+    });
+  }
+
 
   Widget createMenu(){
     return Column(

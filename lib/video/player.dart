@@ -38,7 +38,10 @@ class _PlayerState extends State<Player> {
   void initState() {
     super.initState();
     download = new Download();
-    videoKey = Download.parselKey(this.widget.url);
+    if(this.widget.url.length > 0)
+      videoKey = Download.parselKey(this.widget.url);
+    else
+      videoKey = this.widget.playItem["key"];
   }
 
   @override
@@ -67,7 +70,7 @@ class _PlayerState extends State<Player> {
         await Storage.setString("historys", jsonEncode(historys));
     }
     
-    if(this.widget.playItem["fileName"] is String) {
+    if(this.widget.playItem["fileName"] is String && this.widget.playItem["fileName"].length > 0) {
       var path = await Download.folder();
       if(this.widget.playItem["fileName"].indexOf(path) > -1) {
         download.fileName = this.widget.playItem["fileName"];
@@ -732,6 +735,15 @@ class _GridState extends State<Grid> {
       }
       download.qualityMedium = index;
       // print("MyTube.audio $index: ${arr[index].size.totalMegaBytes.toStringAsFixed(2) + 'MB'} ==========================");
+    } else {
+      isVideo = true;
+      this.setState(() {
+      if(loadingContext != null)
+        Navigator.pop(loadingContext);
+      loadingContext = null;
+      getStream();
+    });
+      return;
     }
 
     if(isVideo == true && arr.length > 7) {

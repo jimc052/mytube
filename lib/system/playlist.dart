@@ -35,8 +35,19 @@ class Playlist {
   }
 
   add(String key, Map<String, dynamic> value){
+    print("MyTube.value: ${value["key"]}");
     if(! _data.containsKey(key)) {
       _data[key] = [];
+    } else {
+      for(int i = 0; i < _data[key].length; i++) {
+        print("MyTube. $i: ${_data[key][i]["key"]}");
+        if(value["key"] == _data[key][i]["key"]) {
+          _data[key][i]["fileName"] = value["fileName"];
+          _data[key][i]["date"] = value["date"];
+          save();
+          return;
+        }
+      }
     }
      _data[key].add(value);
     save();

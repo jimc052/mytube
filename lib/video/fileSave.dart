@@ -40,7 +40,7 @@ class _FileSaveState extends State<FileSave> {
         // print("MyTube.playlist: ${k}");
         if(exists == false) {
           for(var i = 0; i < v.length; i++) {
-            if(v[i]["key"] == this.widget.videoKey){
+            if(v[i]["key"] == this.widget.videoKey && v[i]["fileName"] is String){
               activeFolder = k;
               activeFileName = v[i]["fileName"];
               exists = true;
