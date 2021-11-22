@@ -26,6 +26,7 @@ class _HomeState extends State<Home> {
   List<ListTile> menuList = [];
   Playlist playlist = Playlist();
   ScrollController _scrollController = ScrollController();
+  var loadingContext;
 
   @override
   void initState() {
@@ -67,8 +68,12 @@ class _HomeState extends State<Home> {
     playItem = await Storage.getString("playItem");
     if(playItem.length == 0)  
       playItem = "YouTube";
-    else if(playItem != "YouTube")
-      scrollTo();
+    else if(playItem != "YouTube"){
+      loading(context, onReady: (_) {
+        loadingContext = _;
+        scrollTo();
+      });
+    }
     await playlist.initial();
     await readMenuList();
     this.setState(() {});
@@ -102,6 +107,7 @@ class _HomeState extends State<Home> {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
+    scrollTo();
     // playItem = "YouTube";
   }
   @override
@@ -259,6 +265,7 @@ class _HomeState extends State<Home> {
       itemCount: data.length,
       itemBuilder: (context, index) {
         return  ListTile(
+          // dense: true,
           title: Text((index +1).toString() + ". " + data[index]["title"],
             overflow: TextOverflow.ellipsis, maxLines: 2,
             style: TextStyle(
@@ -324,11 +331,11 @@ class _HomeState extends State<Home> {
           selected: operation == "" && data[index]["active"] is bool && data[index]["active"] == true 
             || (operation == "delete" && deleteFlag.indexOf(",$index,") > -1) 
             ? true : false ,
-          contentPadding: EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
+          contentPadding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 10.0),
         );
       },
       separatorBuilder: (context, index) {
-        return Divider();
+        return Divider(indent: 0, height: 1.0);
       },
       
     );
@@ -344,21 +351,24 @@ class _HomeState extends State<Home> {
         break;
       }
     }
-    index = 15;
+    // index = 80;
     _scrollController.animateTo(
-      79 * (index.toDouble()),
+      75 * (index.toDouble()), // 79 在 V2 ok 
       duration: Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn
     );
+    if(loadingContext != null)
+      Navigator.pop(loadingContext);
+    loadingContext = null;
   }
-
 
   readMenuList() async {
     operation = "";
     menuList = [];
-    
+
     menuList.add(
       ListTile(
+        dense: true,
         title: Text('YouTube',
           style: TextStyle(
             // color: Colors.red,
@@ -367,6 +377,7 @@ class _HomeState extends State<Home> {
         ),
         onTap: () async {
           Navigator.pop(context);
+          deleteFlag = "";
           currentURL = "";
           if(playItem == "YouTube") {
             this.webViewController!.reload();
@@ -381,13 +392,14 @@ class _HomeState extends State<Home> {
         // enabled: _act == 2,
         selected: playItem == "YouTube" ? true : false ,
         // leading: const Icon(Icons.flight_land),
-        contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 5.0),
+        contentPadding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 5.0),
       )
     );
 
     playlist.data.forEach((k, v) {
       menuList.add(
         ListTile(
+          dense: true,
           title: Text(k,
             overflow: TextOverflow.ellipsis, maxLines: 2,
             style: TextStyle(
@@ -395,22 +407,32 @@ class _HomeState extends State<Home> {
             ),
           ),
           onTap: () async {
-            await Storage.setString("playItem", k);
-            deleteFlag = "";
-            playItem = k;
-            readMenuList();
-            setState(() { 
-            });
-            scrollTo();
             Navigator.pop(context);
+            
+            if(k == playItem) {
+              if(deleteFlag.length > 0) {
+                deleteFlag = "";
+                setState(() { });
+              }
+              return;
+            }
+
+            loading(context, onReady: (_) async {
+              loadingContext = _;
+              await Storage.setString("playItem", k);
+              deleteFlag = "";
+              playItem = k;
+              readMenuList();
+              setState(() { });
+              scrollTo();
+            });
           },
           selected: playItem == k ? true : false ,
-          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 5.0),
+          contentPadding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 5.0),
         )
       );
     });
   }
-
 
   Widget createMenu(){
     return Column(
@@ -441,7 +463,7 @@ class _HomeState extends State<Home> {
               return menuList[index];
             },
             separatorBuilder: (context, index) {
-              return Divider();
+              return Divider(indent: 0, height: 1.0);
             },
           )
         ),
