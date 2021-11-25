@@ -1,8 +1,8 @@
 console.clear();
 let options = document.querySelectorAll("#items a.ytd-grid-video-renderer");
 let def =  {
-  "author": "ALCPT", 
-  "date": "2021/11/19 08:00:00", 
+  "author": "知心英文", 
+  "date": "2021/11/23 08:00:00", 
 };
 let arr = [];
 for(let i = 0; i < options.length; i++) {
@@ -20,13 +20,13 @@ for(let i = 0; i < options.length; i++) {
     title
   }, def))
 }
-arr.sort(function(a, b) {
-	if(a.title > b.title)
-		return 1;
-	else if(a.title < b.title)
-		return -1;
-	return 0;
-})
+// arr.sort(function(a, b) {
+// 	if(a.title > b.title)
+// 		return 1;
+// 	else if(a.title < b.title)
+// 		return -1;
+// 	return 0;
+// })
 console.log("\n\n" + JSON.stringify(arr))
 // -------------------------
 console.clear();

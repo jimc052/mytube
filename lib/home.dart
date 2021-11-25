@@ -22,7 +22,7 @@ class _HomeState extends State<Home> {
   final methodChannel = const MethodChannel('com.flutter/MethodChannel');
   final eventChannel = const EventChannel('com.flutter/EventChannel');
   var timer, url = "https://m.youtube.com", permission = false;
-  String currentURL = "", versionName = "", playItem = "", operation = "", deleteFlag = "";
+  String currentURL = "", versionName = "", playItem = "", deleteFlag = "";
   List<ListTile> menuList = [];
   Playlist playlist = Playlist();
   ScrollController _scrollController = ScrollController();
@@ -120,7 +120,7 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     var appBar = AppBar(title: Text(playItem), 
       actions: [
-        if(operation == "delete") // 確定刪除
+        if(deleteFlag.length > 0)// 確定刪除
         IconButton(
           icon: Icon(
             Icons.delete,
@@ -133,11 +133,11 @@ class _HomeState extends State<Home> {
                 data.removeAt(i);
             }
             playlist.save();
-            operation = "";
+            deleteFlag = "";
             setState(() { });
           },
         ),
-        if(operation == "delete") // 取消
+        if(deleteFlag.length > 0) // 取消
         IconButton(
           icon: Icon(
             Icons.undo,
@@ -145,7 +145,6 @@ class _HomeState extends State<Home> {
           ),
           onPressed: () {
             deleteFlag = "";
-            operation = "";
             setState(() { });
           },
         )
@@ -267,20 +266,28 @@ class _HomeState extends State<Home> {
         return  ListTile(
           // dense: true,
           title: Text((index +1).toString() + ". " + data[index]["title"],
-            overflow: TextOverflow.ellipsis, maxLines: 2,
+            overflow: TextOverflow.ellipsis, maxLines: 1,
             style: TextStyle(
-              // color: Colors.red,
+              color: (deleteFlag.length > 0 && deleteFlag.indexOf(",$index,") > -1) ? Colors.white :  null,
               fontSize: 20,
             ),
           ),
           subtitle: Row(children: [
-            Text(data[index]["date"].substring(0, 10)),
+            Text(data[index]["date"].substring(0, 10),
+              style: TextStyle(
+                color: (deleteFlag.length > 0 && deleteFlag.indexOf(",$index,") > -1) ? Colors.white :  null,
+              ),
+            ),
             Expanded(
               child: Container(),
               flex: 1
             ),
             data[index]["position"] is int 
-              ? Text(Duration(seconds:data[index]["position"]).toString().substring(0, 7), ) 
+              ? Text(Duration(seconds:data[index]["position"]).toString().substring(0, 7),
+                  style: TextStyle(
+                    color: (deleteFlag.length > 0 && deleteFlag.indexOf(",$index,") > -1) ? Colors.white :  null,
+                  ),
+                ) 
               : Container(),
           ]),
           // leading: Icon(Icons.more_vert),
@@ -290,7 +297,7 @@ class _HomeState extends State<Home> {
           // trailing: operation == "" ? (data[index]["fileName"] is String && data[index]["fileName"].length > 0 ? Icon(Icons.live_tv_rounded) : null)
           //   :  (data[index]["delete"] == true ? Icon(Icons.check_box) : Icon(Icons.check_box_outline_blank)),
           onTap: () async {
-            if(operation == "") {
+            if(deleteFlag.length == 0) {
               for(var i = 0; i < data.length; i++) {
                 if(i == index)
                   data[i]["active"] = true;
@@ -316,21 +323,18 @@ class _HomeState extends State<Home> {
                 }
               }
               if(b == false)
-                operation = "";
+                deleteFlag = "";
             }
             setState(() { });
           },
           onLongPress: () {
-            if(operation == "") {
-              operation = "delete";
-            }
             deleteFlag = ",$index,";
-            print("MyTube.deleteFlag: $deleteFlag");
             setState(() {});
           },
-          selected: operation == "" && data[index]["active"] is bool && data[index]["active"] == true 
-            || (operation == "delete" && deleteFlag.indexOf(",$index,") > -1) 
+          selected: deleteFlag.length == 0 && data[index]["active"] is bool && data[index]["active"] == true 
+            // || (deleteFlag.length > 0 && deleteFlag.indexOf(",$index,") > -1) 
             ? true : false ,
+          tileColor: (deleteFlag.length > 0 && deleteFlag.indexOf(",$index,") > -1) ? Colors.blue[400] : null, 
           contentPadding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 10.0),
         );
       },
@@ -363,7 +367,6 @@ class _HomeState extends State<Home> {
   }
 
   readMenuList() async {
-    operation = "";
     menuList = [];
 
     menuList.add(
@@ -508,6 +511,7 @@ class _HomeState extends State<Home> {
   }
 
   openVideo(String href) async {
+    print("MyTube: $href");
     this.webViewController!.clearIntervalAD();
     if(href.indexOf("/watch?") == -1) {
       print("MyTube.openVideo.reload: $href");
