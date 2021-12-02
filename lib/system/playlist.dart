@@ -8,7 +8,7 @@ class Playlist {
   String path = "";
 
   Future<Map<String, dynamic>> initial() async {
-    path = await Download.folder() + "/playlist.json";
+    path = await Download.folder() + "/playlist.txt";
     var filePlayList = File(path);
     if(filePlayList.existsSync() == true){
       final content = filePlayList.readAsStringSync();

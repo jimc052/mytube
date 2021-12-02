@@ -94,7 +94,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
           ? Player(url: this.widget.url, folder: folder, playItem: playItem) 
           : Browser(url: this.widget.url)
         ),
-        floatingActionButton: playItem["key"] is String
+        floatingActionButton: playItem["key"] is String && playItem["fileName"] is String
           ? Container()
           : FloatingActionButton(
           onPressed: () async {

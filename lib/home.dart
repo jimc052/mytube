@@ -94,7 +94,7 @@ class _HomeState extends State<Home> {
     String watchID = await Storage.getString("watchID");
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    if(androidInfo.model == "V2") watchID = "/watch?v=i_7_tioMqKc";
+    // if(androidInfo.model == "V2") watchID = "/watch?v=i_7_tioMqKc";
     // if(androidInfo.model == "V2") watchID = "/watch?v=sTjJ1LlviKM"; // test, 中視颱風
     // watchID = "/watch?v=iP8SqetfseI"; // test, 如實記
     if(playItem == "YouTube" && Platform.isAndroid && watchID.length > 0){
@@ -345,6 +345,7 @@ class _HomeState extends State<Home> {
     );
   }
   scrollTo() async {
+    if(_scrollController == null) return;
     await Future.delayed(const Duration(milliseconds: 600));
 
     var data = playlist.data.containsKey(playItem) ? playlist.data[playItem] : [];
@@ -511,15 +512,21 @@ class _HomeState extends State<Home> {
   }
 
   openVideo(String href) async {
+    // MyTube: /watch?v=h1Yp6s44iDQ
     print("MyTube: $href");
-    this.webViewController!.clearIntervalAD();
+    
     if(href.indexOf("/watch?") == -1) {
       print("MyTube.openVideo.reload: $href");
       this.webViewController!.loadUrl(url + href);
-    } else if(this.webViewController != null) {
+    } else {
+      if(playItem == "YouTube" && this.webViewController != null) {
+        this.webViewController!.clearIntervalAD();
+        this.webViewController!.readAnchor(false);
+      }
+
       await Storage.setString("watchID", href);
       print("MyTube.openVideo: $href");
-      this.webViewController!.readAnchor(false);
+      
       showDialog(
         context: context,
         builder: (_) {
@@ -527,8 +534,10 @@ class _HomeState extends State<Home> {
         }
       ).then((valueFromDialog) async {
         await Storage.setString("watchID", "");
-        this.webViewController!.readAnchor(true);
-        this.webViewController!.clearIntervalAD();
+        if(playItem == "YouTube" && this.webViewController != null) {
+          this.webViewController!.readAnchor(true);
+          this.webViewController!.clearIntervalAD();
+        }
         await playlist.initial();
         await readMenuList();
         this.setState(() {});
@@ -536,6 +545,11 @@ class _HomeState extends State<Home> {
     }
   }
   openPlayer(Map<String, dynamic> item){
+    if(item["fileName"] == null) {
+      openVideo("/watch?v=" + item["key"]);
+      return;
+    }
+    // {key: g4b8KEskdjM, title: ALCPT Form 40, author: ALCPT, date: 2021/11/19 08:00:00, active: true}
     print("MyTube: $item");
     showDialog(
       context: context,

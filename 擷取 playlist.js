@@ -1,8 +1,8 @@
 console.clear();
 let options = document.querySelectorAll("#items a.ytd-grid-video-renderer");
 let def =  {
-  "author": "知心英文", 
-  "date": "2021/11/23 08:00:00", 
+  "author": "跟洋妞学英语", 
+  "date": "2021/11/26 12:00:00", 
 };
 let arr = [];
 for(let i = 0; i < options.length; i++) {

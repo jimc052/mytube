@@ -18,6 +18,7 @@ import 'package:mytube/system/playlist.dart';
 Download download = new Download();
 Map<String, dynamic> historys = {};
 Playlist playlist = Playlist();
+
 class Player extends StatefulWidget {
   final String url;
   String folder;
@@ -47,6 +48,7 @@ class _PlayerState extends State<Player> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
+    var url = await Storage.getString("url");
     String s = await Storage.getString("historys");
     if(s.indexOf("0:00:00 / ") > -1) s = ""; // 為了清除以前的格式，2021-11-09
     // print("MyTube.historys: $s");
@@ -96,6 +98,14 @@ class _PlayerState extends State<Player> {
         setState(() {});     
       } else
         checkHistroy();
+    } else if(this.widget.playItem["key"] is String && url.indexOf(this.widget.playItem["key"]) > 0) {
+      download.fileName = await Storage.getString("fileName");
+      download.title = await Storage.getString("title");
+      download.author = await Storage.getString("author");
+      download.mb = await Storage.getString("mb");;
+      download.duration = Duration(milliseconds: await Storage.getInt("duration"));
+      processing = 100;
+      setState(() {});
     } else 
       checkHistroy();
   }
@@ -225,7 +235,6 @@ class _PlayerState extends State<Player> {
 
   List<Widget> show(){
     double height = MediaQuery.of(context).size.height;
-
     List<Widget> widget = [];
     if(processing == 100) {
       widget.add(PlayerControler(fileName: download.fileName, position: download.position, videoKey: videoKey, controller: player, 
@@ -290,8 +299,8 @@ class _PlayerState extends State<Player> {
                       fileSave(context, 
                         videoKey: videoKey,
                         fileName: download.fileName,
-                        title: download.title, 
-                        author: download.author
+                        title: this.widget.playItem["title"] is String ? this.widget.playItem["title"] : download.title, 
+                        author: this.widget.playItem["author"] is String ? this.widget.playItem["author"] : download.author
                       ); 
                     },
                   )
@@ -318,10 +327,9 @@ class _PlayerState extends State<Player> {
       }
     });
   }
-  
 
   recorder(int position) async {
-    if(isPlaylist == true) {
+    if(this.widget.playItem["key"] is String) {
       this.widget.playItem["position"] = position;
       playlist.update(this.widget.folder, this.widget.playItem);
     } else {
