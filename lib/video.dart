@@ -91,7 +91,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
           actions: [],
         ),
         body: local == -1 ? null : (local == 1  
-          ? Player(url: this.widget.url, folder: folder, playItem: playItem) 
+          ? Player(url: this.widget.url, folder: folder, playItem: playItem)
           : Browser(url: this.widget.url)
         ),
         floatingActionButton: playItem["key"] is String && playItem["fileName"] is String

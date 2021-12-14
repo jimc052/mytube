@@ -107,7 +107,7 @@ class _HomeState extends State<Home> {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
-    scrollTo();
+    // scrollTo();
     // playItem = "YouTube";
   }
   @override

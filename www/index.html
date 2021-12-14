@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>MyTube</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+	<meta http-equiv="Content-Security-Policy" content="default-src *; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'; media-src *; img-src * filesystem: data:">
+	
+	<style>
+		* {
+			-webkit-box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			box-sizing: border-box;
+			user-select: none;
+			font-family: 'Times New Roman', 'Helvetica Neue', 微軟正黑體, 'Microsoft Jhenghei', Helvetica, Arial, sans-serif;
+			font-size: 16px;
+		}
+		body {
+			margin: 0px;
+			background-color: #ebecf0;
+			padding: 0px 0px;
+			/* visibility: hidden; */
+			color: rgb(0, 0, 0);
+		}
+		html, body {
+			min-height: 100% !important;
+			height: 100%;
+		}
+		
+	</style>
+</head>
+<body style="overflow: hidden;">
+  <div id="player" style="visibility: hidden;"></div>
+</body>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+	var player;
+	window.onload = async function(){
+    // execute("T_5gdq2ZjVM")
+	}
+
+  function execute(key){
+    player = new YT.Player('player', {
+      videoId: key,
+      // height: 180,
+      // width: document.body.clientWidth, // '640',
+      events: {
+        'onReady': ()=>{
+          if(document.body.clientHeight > document.body.clientWidth) {
+            let rate = document.body.clientWidth / document.getElementById("player").width;
+            document.getElementById("player").width = document.body.clientWidth;
+            document.getElementById("player").height = rate * document.getElementById("player").height;
+          } else {
+            let rate = document.body.clientHeight / document.getElementById("player").height;
+            document.getElementById("player").height = document.body.clientHeight;
+            document.getElementById("player").width = rate * document.getElementById("player").width;
+          }
+          document.getElementById("player").style.visibility = "visible";
+        },
+        'onStateChange': (e)=>{
+          // console.log("onPlayerStateChange: " + e.data + " ..................")
+          // if(e.data == 1) {
+          // 	intervalID = setInterval(() => {
+          // 		recorders[videoId] = player.getCurrentTime();
+          // 		window.localStorage["mytube"] = JSON.stringify(recorders);
+          // 		// console.log(player.getCurrentTime())
+          // 	}, 1000 * 3);
+          // }  else {
+          // 	if(e.data == 0 || e.data == 2) {
+          // 		recorders[videoId] = e.data == 0 ? 0 : player.getCurrentTime();
+          // 		window.localStorage["mytube"] = JSON.stringify(recorders);
+          // 	}
+          // 	clearInterval(intervalID);
+          // }
+          /*
+          -1：unstarted 未啟動，初次載入
+          0：ended 結束
+          1：playing 播放中
+          2：paused 暫停
+          3：buffering 緩衝中
+          5：video cued 準備好可以播放了
+          
+          player.stopVideo();
+          player.pauseVideo()
+          */
+        }
+      },
+      playerVars: {
+        autoplay: 1, // Auto-play the video on load, 默认值为 0
+        // controls: 0, // Show pause/play buttons in player, 0 - 播放器控件不会在播放器中显示。
+        // showinfo: 1, // Hide the video title, 2018 年 9 月 25 日后，此参数已被弃用，并会被忽略
+        // modestbranding: 1, // Hide the Youtube Logo, 此参数可让您使用不显示 YouTube 徽标的 YouTube 播放器。将参数值设置为 1 可以阻止 YouTube 徽标显示在控制栏中。
+        fs: 0, // 0 可以阻止全屏按钮显示在播放器中。默认值为 1
+        // cc_load_policy: 0, // Hide closed captions
+        iv_load_policy: 3, // Hide the Video Annotations, 将参数值设置为 1 会在默认情况下显示视频注释，而将其设置为 3 则默认不显示。默认值为 1。
+        // start: 5,
+        // end: 10,
+        loop: 1,
+        autohide: 0 // Hide video controls when playing
+      }
+    });
+    setTimeout(() => {
+      player.playVideo();
+    }, 3000);
+  }
+/*
+playVideo()
+stopVideo();
+pauseVideo();
+seekTo(seconds:Number, allowSeekAhead:Boolean)
+*/
+</script>
+</html>

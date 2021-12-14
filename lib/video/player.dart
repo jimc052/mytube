@@ -99,11 +99,13 @@ class _PlayerState extends State<Player> {
       } else
         checkHistroy();
     } else if(this.widget.playItem["key"] is String && url.indexOf(this.widget.playItem["key"]) > 0) {
+      await playlist.initial();
       download.fileName = await Storage.getString("fileName");
       download.title = await Storage.getString("title");
       download.author = await Storage.getString("author");
       download.mb = await Storage.getString("mb");;
       download.duration = Duration(milliseconds: await Storage.getInt("duration"));
+      download.position = this.widget.playItem["position"] is int ? this.widget.playItem["position"] : 0;
       processing = 100;
       setState(() {});
     } else 
@@ -163,7 +165,7 @@ class _PlayerState extends State<Player> {
     try{
       await download.execute(folder: isPlaylist == true ? this.widget.folder : "",
         fileName: isPlaylist == true ? this.widget.playItem["fileName"] : "",
-        onProcessing: (int process){
+        onProcessing: (int process) async {
           processing = process;
           if(process == 100 && isPlaylist == false) {
             Storage.setString("url", this.widget.url);
@@ -172,6 +174,9 @@ class _PlayerState extends State<Player> {
             Storage.setString("author", download.author);
             Storage.setString("mb", download.mb);
             Storage.setInt("duration", download.duration.inMilliseconds);
+            if(this.widget.playItem["key"] is String) {
+              await playlist.initial();
+            }
           }
           setState(() { });
         }
@@ -623,6 +628,7 @@ class _PlayerControlerState extends State<PlayerControler> {
               _controller!.seekTo(Duration(seconds: value.toInt()));
               Timer(Duration(milliseconds: 300), () {
                 _position = _controller!.value.position;
+                this.widget.onProcessing(_position.inSeconds);
                 this.setState((){});
               });
             });
