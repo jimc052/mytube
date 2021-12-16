@@ -501,7 +501,7 @@ class _PlayerControlerState extends State<PlayerControler> {
       if(_controller != null) {
         if((data == "unplugged" || data == "action.TOGGLE") && _controller!.value.isPlaying == true) {
           pause();
-        } else if(data == "action.TOGGLE" && _controller!.value.isPlaying == false) {
+        } else if((data == "plugged" || data == "action.TOGGLE") && _controller!.value.isPlaying == false) {
           play();
         } else if(data == "action.STOP"){
           stop();

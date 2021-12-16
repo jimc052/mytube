@@ -199,7 +199,7 @@ class _HomeState extends State<Home> {
         if(progress == 100 ) {
           String url = (await this.webViewController!.currentUrl()).toString();
           if(currentURL != url){
-            print("MyTube.onProgress: $url");
+            // print("MyTube.onProgress: $url");
             currentURL = url;
             if(url == "https://m.youtube.com/" ) {
               this.webViewController!.setAnchorClick("a.large-media-item-thumbnail-container");
@@ -248,7 +248,7 @@ class _HomeState extends State<Home> {
         print("myTube.onPageStarted.url: ${await this.webViewController!.currentUrl()}");
       },
       onPageFinished: (String url) async {
-        print("myTube.onPageFinished.url: ${await this.webViewController!.currentUrl()}");
+        // print("myTube.onPageFinished.url: ${await this.webViewController!.currentUrl()}");
       },
       debuggingEnabled: true,
       // gestureNavigationEnabled: true,

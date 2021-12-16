@@ -154,12 +154,12 @@ public class MainActivity extends FlutterActivity {
         int state = intent.getIntExtra("state", -1);
         switch (state) {
           case 0:
-//             Log.d(TAG, "Headset is unplugged");
               if(MainActivity.eventSink != null)
                 MainActivity.eventSink.success("unplugged");
             break;
           case 1:
-//             Log.d(TAG, "Headset is plugged");
+              if(MainActivity.eventSink != null)
+                MainActivity.eventSink.success("plugged");
             break;
           default:
             Log.d(TAG, "I have no idea what the headset state is");

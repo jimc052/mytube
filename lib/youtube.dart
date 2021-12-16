@@ -94,24 +94,59 @@ extension MyWebController on WebViewController {
   }
 
   pause() async { // 暫停
-    await this.evaluateJavascript(
-      '''
-      {
-        let video = document.querySelector("video"); 
-        if(video != null && video.paused == false)
-          video.pause();
-      }
-      ''');
+    String url = (await this.currentUrl()).toString();
+    if(url.indexOf("/watch?") > -1) {
+      await this.evaluateJavascript(
+        '''
+        {
+          let video = document.querySelector("video"); 
+          if(video != null && video.paused == false)
+            video.pause();
+        }
+        '''
+      );
+    } else {
+      await this.evaluateJavascript(''' player.pauseVideo(); ''');
+    }
   }
+
+  play() async { //
+    String url = (await this.currentUrl()).toString();
+    if(url.indexOf("/watch?") > -1) {
+      await this.evaluateJavascript(
+        '''
+        {
+          let video = document.querySelector("video");
+          if(video != null) video.play();
+        }
+        '''
+      );
+    } else {
+      await this.evaluateJavascript(''' player.playVideo(); ''');
+    }
+  }
+
   unmuted() async{ // 取消靜音
     await this.evaluateJavascript(
     '''
       if(typeof window.muted == "undefined") {
         window.muted = false;
-        console.log("MyTube: mute............")
+        // console.log("MyTube: mute............")
         setTimeout(()=>{
           click("ytp-unmute");
-          let video = document.querySelector("video"); 
+          let video = document.querySelector("video");
+
+          video.onended = (event) => {
+            Flutter.postMessage(JSON.stringify({state: "ended"}));
+          };
+
+          video.onpause = (event) => {
+            Flutter.postMessage(JSON.stringify({state: "paused"}));
+          };
+
+          video.onplaying = (event) => {
+            Flutter.postMessage(JSON.stringify({state: "playing"}));
+          };
           video.play();
         }, 100 * 6)
       }
@@ -124,6 +159,13 @@ extension MyWebController on WebViewController {
         } else {
           return false;
         }
+      }
+
+      window.onresize =  function (e) {
+        setTimeout(() => {
+          let video = document.querySelector("video"); 
+          video.play();
+        }, 3000);
       }
     ''');
   }

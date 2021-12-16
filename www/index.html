@@ -18,7 +18,7 @@
 		}
 		body {
 			margin: 0px;
-			background-color: #ebecf0;
+			background-color: #202124;;
 			padding: 0px 0px;
 			/* visibility: hidden; */
 			color: rgb(0, 0, 0);
@@ -35,10 +35,31 @@
 </body>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-	var player;
+	var player, state = "";
 	window.onload = async function(){
-    // execute("T_5gdq2ZjVM")
+    if(typeof Flutter != "object") {
+    // execute("T_5gdq2ZjVM") // UU
+    // execute("sU5eqkhM_H0") // 關鍵時刻
+    }
 	}
+  window.onresize = resize;
+
+  function resize(e) {
+    if(document.body.clientHeight > document.body.clientWidth) {
+      let rate = document.body.clientWidth / document.getElementById("player").width;
+      document.getElementById("player").width = document.body.clientWidth;
+      document.getElementById("player").height = rate * document.getElementById("player").height;
+    } else {
+      let rate = document.body.clientHeight / document.getElementById("player").height;
+      document.getElementById("player").height = document.body.clientHeight;
+      document.getElementById("player").width = rate * document.getElementById("player").width;
+    }
+    if(state != "") {
+      setTimeout(() => {
+        player.playVideo();
+      }, 3000);
+    }
+  }
 
   function execute(key){
     player = new YT.Player('player', {
@@ -47,18 +68,14 @@
       // width: document.body.clientWidth, // '640',
       events: {
         'onReady': ()=>{
-          if(document.body.clientHeight > document.body.clientWidth) {
-            let rate = document.body.clientWidth / document.getElementById("player").width;
-            document.getElementById("player").width = document.body.clientWidth;
-            document.getElementById("player").height = rate * document.getElementById("player").height;
-          } else {
-            let rate = document.body.clientHeight / document.getElementById("player").height;
-            document.getElementById("player").height = document.body.clientHeight;
-            document.getElementById("player").width = rate * document.getElementById("player").width;
-          }
+          // console.log("onReady")
+          resize();
           document.getElementById("player").style.visibility = "visible";
         },
         'onStateChange': (e)=>{
+          state = e.data;
+          if(typeof Flutter == "object")
+            Flutter.postMessage(JSON.stringify({state: state == 1 ? "playing" : (state == 2 ? "paused" : "ended") }));
           // console.log("onPlayerStateChange: " + e.data + " ..................")
           // if(e.data == 1) {
           // 	intervalID = setInterval(() => {
@@ -102,6 +119,13 @@
     });
     setTimeout(() => {
       player.playVideo();
+      setTimeout(() => {
+        if(state == "") {
+          if(typeof Flutter == "object")
+            Flutter.postMessage(JSON.stringify({msg: "無法播放"}));
+          alert("無法播放")
+        }
+      }, 1000);
     }, 3000);
   }
 /*
@@ -110,5 +134,6 @@ stopVideo();
 pauseVideo();
 seekTo(seconds:Number, allowSeekAhead:Boolean)
 */
+
 </script>
 </html>
