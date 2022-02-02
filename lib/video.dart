@@ -25,6 +25,7 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   int local = -1;
   Map<String, dynamic> playItem = {};
   String folder = "";
+  Browser? controller;
   var timer;
   @override
   void initState() {
@@ -54,8 +55,8 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state)  {
     switch (state) {
       case AppLifecycleState.paused:
-        if(local != 1) {
-          timer = Timer(Duration(minutes: 20), () { // broswer.dart 要 pause
+        if(local != 1 && this.controller!.noAD == false) {
+          timer = Timer(Duration(minutes: 30), () { // broswer.dart 要 pause
             Navigator.pop(context);
           });          
         }
@@ -92,7 +93,10 @@ class _VideoState extends State<Video> with WidgetsBindingObserver {
         ),
         body: local == -1 ? null : (local == 1  
           ? Player(url: this.widget.url, folder: folder, playItem: playItem)
-          : Browser(url: this.widget.url)
+          : Browser(url: this.widget.url, onCreated: (Browser controller){
+            this.controller = controller;
+            
+          },)
         ),
         floatingActionButton: playItem["key"] is String && playItem["fileName"] is String
           ? Container()

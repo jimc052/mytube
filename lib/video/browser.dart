@@ -7,8 +7,10 @@ import 'package:flutter/services.dart';
 
 class Browser extends StatefulWidget {
   final String url;
+  Function(Browser )? onCreated;
+  bool noAD = true;
 
-  Browser({Key? key, required this.url}) : super(key: key);
+  Browser({Key? key, required this.url, required this.onCreated}) : super(key: key);
 
   @override
   _BrowserState createState() => _BrowserState();
@@ -17,7 +19,7 @@ class Browser extends StatefulWidget {
 class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   WebViewController? webViewController;
   final eventChannel = const EventChannel('com.flutter/EventChannel');
-  var timer, noAD = true, videoState = "ended";
+  var timer,  videoState = "ended";
 
   @override
   void initState() {
@@ -37,10 +39,11 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     switch (state) {
       case AppLifecycleState.paused:
-        timer = Timer(Duration(minutes: 30), () { // video.dart 要 pop
-          if(noAD == false)
+        if(this.widget.noAD == false){
+          timer = Timer(Duration(minutes: 30), () { // video.dart 要 pop
             this.webViewController!.pause();
-        }); 
+          });
+        }
         break;
       case AppLifecycleState.resumed:
         if(timer != null) timer.cancel();
@@ -51,7 +54,7 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   @override
   void reassemble() async { // develope mode
     super.reassemble();
-    // noAD = false;
+    // this.widget.noAD = false;
   }
   @override
   void dispose() {
@@ -63,19 +66,19 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return WebView(
-      initialUrl: noAD == true ? "" : this.widget.url,
+      initialUrl: this.widget.noAD == true ? "" : this.widget.url,
       initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow,
       javascriptMode: JavascriptMode.unrestricted,
       onWebViewCreated: (WebViewController webViewController) async {
         this.webViewController = webViewController;
-        if(noAD == true) _loadHtmlFromAssets();
+        if(this.widget.noAD == true) _loadHtmlFromAssets();
       },
       javascriptChannels: <JavascriptChannel>[
         javascriptChannel(context),
       ].toSet(),
       onProgress: (int progress) async {
         // print("MyTube.onProgress: ${progress}");
-        if(noAD == false && progress == 100) {
+        if(this.widget.noAD == false && progress == 100) {
           String url = (await this.webViewController!.currentUrl()).toString();
           if(url.indexOf("/watch?") > -1) {
             this.webViewController!.unmuted();
@@ -84,9 +87,9 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
       },
       onPageStarted: (String url) {},
       onPageFinished: (String url) async {
-        String url = (await this.webViewController!.currentUrl()).toString();
-        print("MyTube.onPageFinished: $url");
-        if(noAD == true) {
+        // String url = (await this.webViewController!.currentUrl()).toString();
+        // print("MyTube.onPageFinished: $url");
+        if(this.widget.noAD == true) {
             await webViewController!.evaluateJavascript(
               '''
                 execute('${this.widget.url.replaceAll("https://m.youtube.com/watch?v=", "")}')
@@ -113,7 +116,7 @@ class _BrowserState extends State<Browser> with WidgetsBindingObserver {
         print("MyTube.javascript: ${message.message}");
         Map<String, dynamic> obj = jsonDecode(message.message);
         if(obj["msg"] is String && obj["msg"] == "無法播放") {
-          noAD = false;
+          this.widget.noAD = false;
           this.webViewController!.loadUrl(this.widget.url);
           setState(() {});
         } else if(obj["state"] is String) 
