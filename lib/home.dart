@@ -201,8 +201,8 @@ class _HomeState extends State<Home> {
           if(currentURL != url){
             // print("MyTube.onProgress: $url");
             currentURL = url;
-            if(url == "https://m.youtube.com/" ) {
-              this.webViewController!.setAnchorClick("a.large-media-item-thumbnail-container");
+            if(url == "https://m.youtube.com/" ) { // a.large-media-item-thumbnail-container
+              this.webViewController!.setAnchorClick("a.media-item-thumbnail-container");
             } else if(url.indexOf("/feed/subscriptions") > -1) {
               this.webViewController!.setAnchorClick(".item a"); // compact-media-item
             } else if(url.indexOf("/channel/") > -1) {

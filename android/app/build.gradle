@@ -20,7 +20,7 @@ keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 30
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -30,9 +30,9 @@ android {
     defaultConfig {
         applicationId "com.tw.mytube"
         minSdkVersion 22
-        targetSdkVersion 31
+        targetSdkVersion 30
         versionCode 2
-        versionName '2021-12-16 09:00'
+        versionName '2022-02-05 09:30'
         applicationVariants.all { variant ->
             variant.outputs.all {
                 outputFileName = "MyTube.apk"
