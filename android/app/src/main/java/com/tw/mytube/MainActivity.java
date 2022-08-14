@@ -61,6 +61,8 @@ public class MainActivity extends FlutterActivity {
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
     GeneratedPluginRegistrant.registerWith(flutterEngine);
 
+    this.getPath(this);
+
     new MethodChannel(
             flutterEngine.getDartExecutor(),
             "com.flutter/MethodChannel")
@@ -272,5 +274,25 @@ public class MainActivity extends FlutterActivity {
           MainActivity.mNM.cancel(1);
       }
     }
+  }
+
+  private void getPath(Context ctx) {
+    String environmentFileRoot = "";
+    if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {//sd卡是否可用
+      int currentapiVersion = android.os.Build.VERSION.SDK_INT;//手机系统版本号
+      if (currentapiVersion < android.os.Build.VERSION_CODES.Q) {
+        environmentFileRoot = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "MyTube" ;
+      } else {
+        File external = ctx.getExternalFilesDir(null);
+        if (external != null) {
+          environmentFileRoot = external.getAbsolutePath();
+        }
+      }
+    } else {
+      environmentFileRoot = ctx.getFilesDir().getAbsolutePath();
+    }
+
+    // Log.i(TAG, environmentFileRoot);
+    MainApplication.path = environmentFileRoot;
   }
 }

@@ -9,12 +9,11 @@ import java.io.File;
 import android.webkit.WebView;
 
 public class MainApplication extends Application  {
+  static public String path = "";
   static public String rootPath(){ // 取得外部儲存裝置路徑
-    String path = Environment.getExternalStorageDirectory().getAbsolutePath() +
-            File.separator + "MyTube";
-
+//    String path = Environment.getExternalStorageDirectory().getAbsolutePath() +
+//            File.separator + "MyTube";
     // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
-
     return path;
   }
 
